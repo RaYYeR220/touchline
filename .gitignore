@@ -1,0 +1,37 @@
+# Rust / Anchor
+.anchor
+target
+test-ledger
+**/*.rs.bk
+.surfpool
+
+# Node
+node_modules
+dist
+.yarn
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Local keys / secrets
+*.pem
+wallet*.json
+
+# Internal / strategy / process artifacts — NEVER publish
+BRIEF.md
+ALTERNATIVES.md
+docs/superpowers/
+.remember/
+MEMORY.md
+*-internal/
+*-backup*
+*.bundle
+ui-prototypes/
+mockups/
+design-ref/
+variants/
+scratch/
+.superpowers/
+submission*.md

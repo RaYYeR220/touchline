@@ -1,0 +1,19 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+mock_oracle = "7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S"
+touchline = "21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ"
+
+[provider]
+cluster = "localnet"
+wallet = '~\.config\solana\id.json'
+
+[scripts]
+test = "cargo test"
+
+[hooks]

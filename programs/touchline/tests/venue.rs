@@ -171,7 +171,7 @@ fn test_create_market() {
         comparison: touchline::state::Comparison::GreaterThan,
     };
 
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(),
         mint: env.mint,
@@ -216,7 +216,7 @@ fn test_post_offer_locks_maker_stake() {
         comparison: touchline::state::Comparison::GreaterThan,
     };
 
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(),
         mint: env.mint,
@@ -284,7 +284,7 @@ fn test_cancel_offer_refunds_maker() {
     let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
 
     // Create market
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
         token_program: token_program_id(), system_program: system_program_id(),
@@ -343,7 +343,7 @@ fn test_fill_offer_escrows_both_sides() {
     let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
 
     // Create market
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
         token_program: token_program_id(), system_program: system_program_id(),
@@ -419,7 +419,7 @@ fn test_fill_cap_per_fill_rejected() {
     let (vault_pda, _) = env.vault_pda(&market_pda);
     let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
 
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
         token_program: token_program_id(), system_program: system_program_id(),
@@ -477,7 +477,7 @@ fn test_market_cap_cumulative_rejected() {
     let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
 
     // Create market
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
         token_program: token_program_id(), system_program: system_program_id(),
@@ -547,7 +547,7 @@ fn test_post_offer_invalid_price_rejected() {
     let (vault_pda, _) = env.vault_pda(&market_pda);
     let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
 
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
         token_program: token_program_id(), system_program: system_program_id(),

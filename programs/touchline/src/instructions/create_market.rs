@@ -8,6 +8,7 @@ pub fn handler(
     fixture_id: u64,
     stat_key: u32,
     predicate: Predicate,
+    oracle_program: Pubkey,
 ) -> Result<()> {
     let m = &mut ctx.accounts.market;
     m.authority = ctx.accounts.authority.key();
@@ -15,6 +16,7 @@ pub fn handler(
     m.stat_key = stat_key;
     m.predicate = predicate;
     m.mint = ctx.accounts.mint.key();
+    m.oracle_program = oracle_program;
     m.status = MarketStatus::Open;
     m.total_pot = 0;
     m.vault_bump = ctx.bumps.vault;

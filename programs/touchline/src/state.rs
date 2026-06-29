@@ -33,6 +33,7 @@ pub struct Market {
     pub stat_key: u32,
     pub predicate: Predicate,
     pub mint: Pubkey,
+    pub oracle_program: Pubkey,
     pub status: MarketStatus,
     pub total_pot: u64,
     pub vault_bump: u8,

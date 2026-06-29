@@ -26,8 +26,9 @@ pub mod touchline {
         fixture_id: u64,
         stat_key: u32,
         predicate: Predicate,
+        oracle_program: Pubkey,
     ) -> Result<()> {
-        instructions::create_market::handler(ctx, fixture_id, stat_key, predicate)
+        instructions::create_market::handler(ctx, fixture_id, stat_key, predicate, oracle_program)
     }
 
     pub fn post_offer(

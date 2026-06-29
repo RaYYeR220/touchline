@@ -12,7 +12,9 @@ use spl_token_interface::instruction as token_ix;
 use solana_system_interface::instruction as system_ix;
 
 // Touchline types
-use touchline::txoracle::types::{ScoresBatchSummary, ScoresUpdateStats, ScoreStat, StatTerm};
+use touchline::txoracle::types::{
+    BinaryExpression, ScoresBatchSummary, ScoresUpdateStats, ScoreStat, StatTerm,
+};
 
 const TOUCHLINE_SO: &str =
     concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/deploy/touchline.so");
@@ -234,7 +236,7 @@ fn setup_filled_position(env: &mut TestEnv, fixture_id: u64) -> MatchedPosition 
     };
 
     // create_market
-    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID }.data();
     let metas = touchline::accounts::CreateMarket {
         authority: env.payer.pubkey(),
         mint: env.mint,
@@ -316,11 +318,19 @@ fn setup_filled_position(env: &mut TestEnv, fixture_id: u64) -> MatchedPosition 
     }
 }
 
-fn settle_ix(
+/// Flexible settle ix builder: lets a test override the payout ATAs and the
+/// oracle program account to exercise the negative security paths.
+#[allow(clippy::too_many_arguments)]
+fn settle_ix_with(
     env: &mut TestEnv,
     mp: &MatchedPosition,
     settler: &Keypair,
-    stat_value: i32,
+    stat1: StatTerm,
+    stat2: Option<StatTerm>,
+    op: Option<BinaryExpression>,
+    maker_ata: Pubkey,
+    taker_ata: Pubkey,
+    oracle_program: Pubkey,
 ) -> Result<litesvm::types::TransactionMetadata, litesvm::types::FailedTransactionMetadata> {
     // Placeholder pubkey for daily_scores_merkle_roots (mock ignores it).
     let merkle_roots = Keypair::new().pubkey();
@@ -330,9 +340,9 @@ fn settle_ix(
         fixture_summary: empty_fixture_summary(),
         fixture_proof: vec![],
         main_tree_proof: vec![],
-        stat1: stat_term(stat_value),
-        stat2: None,
-        op: None,
+        stat1,
+        stat2,
+        op,
     }
     .data();
     let metas = touchline::accounts::Settle {
@@ -341,15 +351,36 @@ fn settle_ix(
         position: mp.position_pda,
         mint: env.mint,
         vault: mp.vault_pda,
-        maker_ata: mp.maker_ata,
-        taker_ata: mp.taker_ata,
+        maker_ata,
+        taker_ata,
         daily_scores_merkle_roots: merkle_roots,
-        oracle_program: mock_oracle::ID,
+        oracle_program,
         token_program: token_program_id(),
     }
     .to_account_metas(None);
 
     send_ix_result(&mut env.svm, &[settler], data, metas)
+}
+
+/// Convenience wrapper: settle the matched position honestly with a single stat.
+fn settle_ix(
+    env: &mut TestEnv,
+    mp: &MatchedPosition,
+    settler: &Keypair,
+    stat_value: i32,
+) -> Result<litesvm::types::TransactionMetadata, litesvm::types::FailedTransactionMetadata> {
+    let (maker_ata, taker_ata) = (mp.maker_ata, mp.taker_ata);
+    settle_ix_with(
+        env,
+        mp,
+        settler,
+        stat_term(stat_value),
+        None,
+        None,
+        maker_ata,
+        taker_ata,
+        mock_oracle::ID,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -466,4 +497,112 @@ fn test_settle_vault_drained() {
     settle_ix(&mut env, &mp, &settler, 2).expect("settle should succeed");
 
     assert_eq!(env.get_token_balance(&mp.vault_pda), 0);
+}
+
+/// C1 (CRITICAL): settle is permissionless, so an attacker tries to redirect the
+/// winner's pot to their own same-mint token account by passing it as maker_ata.
+/// The `token::authority = position.maker` constraint must reject it and the
+/// vault must stay untouched.
+#[test]
+fn test_settle_rejects_attacker_maker_ata() {
+    let mut env = TestEnv::new();
+    let settler = Keypair::new();
+    env.svm.airdrop(&settler.pubkey(), 1_000_000_000).unwrap();
+
+    let mp = setup_filled_position(&mut env, 104);
+
+    // Attacker owns a valid same-mint token account, but is neither maker nor taker.
+    let attacker = Keypair::new();
+    env.svm.airdrop(&attacker.pubkey(), 1_000_000_000).unwrap();
+    let attacker_ata = env.create_token_account(&attacker.pubkey());
+
+    let vault_before = env.get_token_balance(&mp.vault_pda);
+
+    // stat.value = 2 -> YES wins -> maker is the winner; attacker substitutes
+    // their account for maker_ata to steal the payout.
+    let res = settle_ix_with(
+        &mut env,
+        &mp,
+        &settler,
+        stat_term(2),
+        None,
+        None,
+        attacker_ata,
+        mp.taker_ata,
+        mock_oracle::ID,
+    );
+    assert!(res.is_err(), "settle with attacker maker_ata must be rejected");
+
+    // Nothing moved: vault still holds the full pot, attacker got nothing.
+    assert_eq!(env.get_token_balance(&mp.vault_pda), vault_before);
+    assert_eq!(env.get_token_balance(&attacker_ata), 0);
+
+    // Position remains unsettled (CEI: state change reverts with the tx).
+    let acc = env.svm.get_account(&mp.position_pda).unwrap();
+    let pos = touchline::state::Position::try_deserialize(&mut &acc.data[..]).unwrap();
+    assert!(!pos.settled, "position must stay unsettled after a rejected settle");
+}
+
+/// C2 (CRITICAL): the oracle program account is pinned to the market's recorded
+/// oracle (`address = market.oracle_program`). Passing any other program id must
+/// be rejected before the CPI, so a forged oracle cannot fake a verdict.
+#[test]
+fn test_settle_rejects_wrong_oracle_program() {
+    let mut env = TestEnv::new();
+    let settler = Keypair::new();
+    env.svm.airdrop(&settler.pubkey(), 1_000_000_000).unwrap();
+
+    let mp = setup_filled_position(&mut env, 105);
+
+    let vault_before = env.get_token_balance(&mp.vault_pda);
+
+    // Use a different program id than the market's recorded oracle (mock_oracle::ID).
+    let wrong_oracle = touchline::ID;
+    let res = settle_ix_with(
+        &mut env,
+        &mp,
+        &settler,
+        stat_term(2),
+        None,
+        None,
+        mp.maker_ata,
+        mp.taker_ata,
+        wrong_oracle,
+    );
+    assert!(res.is_err(), "settle with a non-pinned oracle program must be rejected");
+
+    // Vault untouched.
+    assert_eq!(env.get_token_balance(&mp.vault_pda), vault_before);
+}
+
+/// Two-stat (Add) path through the mock oracle: stat1 + stat2 = 1 + 1 = 2 > 1
+/// -> YES wins -> maker receives the full pot. Exercises the binary-expression
+/// branch of validate_stat.
+#[test]
+fn test_settle_two_stat_add_yes_wins() {
+    let mut env = TestEnv::new();
+    let settler = Keypair::new();
+    env.svm.airdrop(&settler.pubkey(), 1_000_000_000).unwrap();
+
+    let mp = setup_filled_position(&mut env, 106);
+
+    let maker_before = env.get_token_balance(&mp.maker_ata);
+
+    // predicate is "value > 1" (threshold 1, GreaterThan). 1 + 1 = 2 > 1 -> true.
+    let res = settle_ix_with(
+        &mut env,
+        &mp,
+        &settler,
+        stat_term(1),
+        Some(stat_term(1)),
+        Some(BinaryExpression::Add),
+        mp.maker_ata,
+        mp.taker_ata,
+        mock_oracle::ID,
+    );
+    res.expect("two-stat add settle should succeed");
+
+    let maker_after = env.get_token_balance(&mp.maker_ata);
+    assert_eq!(maker_after - maker_before, mp.pot, "maker should receive full pot");
+    assert_eq!(env.get_token_balance(&mp.vault_pda), 0, "vault drained");
 }

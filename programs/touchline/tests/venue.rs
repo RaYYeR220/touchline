@@ -17,10 +17,6 @@ fn token_program_id() -> Pubkey {
     spl_token_interface::id()
 }
 
-fn ata_program_id() -> Pubkey {
-    spl_associated_token_account_interface::program::id()
-}
-
 fn system_program_id() -> Pubkey {
     Pubkey::default()
 }
@@ -455,6 +451,81 @@ fn test_fill_cap_per_fill_rejected() {
     let position_id: u64 = 1;
     let (position_pda, _) = env.position_pda(&offer_pda, position_id);
 
+    let data = touchline::instruction::FillOffer { position_id, fill_pot }.data();
+    let metas = touchline::accounts::FillOffer {
+        taker: taker.pubkey(), market: market_pda, offer: offer_pda, position: position_pda,
+        mint: env.mint, taker_ata, vault: vault_pda, token_program: token_program_id(),
+        system_program: system_program_id(),
+    }.to_account_metas(None);
+    send_ix_expect_err(&mut env.svm, &[&taker], data, metas);
+}
+
+#[test]
+fn test_market_cap_cumulative_rejected() {
+    let mut env = TestEnv::new();
+    let maker = Keypair::new();
+    let taker = Keypair::new();
+    env.svm.airdrop(&maker.pubkey(), 10_000_000_000).unwrap();
+    env.svm.airdrop(&taker.pubkey(), 10_000_000_000).unwrap();
+
+    let fixture_id: u64 = 6;
+    let stat_key: u32 = 1;
+    let threshold: i32 = 1;
+    let comparison: u8 = 0;
+    let (market_pda, _) = env.market_pda(fixture_id, stat_key, threshold, comparison);
+    let (vault_pda, _) = env.vault_pda(&market_pda);
+    let predicate = touchline::state::Predicate { threshold, comparison: touchline::state::Comparison::GreaterThan };
+
+    // Create market
+    let data = touchline::instruction::CreateMarket { fixture_id, stat_key, predicate }.data();
+    let metas = touchline::accounts::CreateMarket {
+        authority: env.payer.pubkey(), mint: env.mint, market: market_pda, vault: vault_pda,
+        token_program: token_program_id(), system_program: system_program_id(),
+    }.to_account_metas(None);
+    send_ix(&mut env.svm, &[&env.payer], data, metas);
+
+    // Maker posts one big offer (5,100 USDC pot, price 5000 bps -> YES stake = 2,550 USDC).
+    let maker_ata = env.create_token_account(&maker.pubkey());
+    env.mint_to(&maker_ata, 3_000_000_000);
+    let offer_id: u64 = 1;
+    let pot: u64 = 5_100_000_000;
+    let price_yes_bps: u16 = 5000;
+    let (offer_pda, _) = env.offer_pda(&market_pda, &maker.pubkey(), offer_id);
+
+    let data = touchline::instruction::PostOffer {
+        offer_id, maker_side: touchline::state::Side::Yes, price_yes_bps, pot,
+    }.data();
+    let metas = touchline::accounts::PostOffer {
+        maker: maker.pubkey(), market: market_pda, offer: offer_pda, mint: env.mint,
+        maker_ata, vault: vault_pda, token_program: token_program_id(), system_program: system_program_id(),
+    }.to_account_metas(None);
+    send_ix(&mut env.svm, &[&maker], data, metas);
+
+    // Taker fills in 100-USDC chunks (the per-fill cap). 50 fills == 5,000 USDC == the market cap.
+    let taker_ata = env.create_token_account(&taker.pubkey());
+    env.mint_to(&taker_ata, 3_000_000_000);
+
+    let fill_pot: u64 = 100_000_000; // 100 USDC == MAX_POT_PER_FILL
+    for i in 0..50u64 {
+        let position_id = i + 1;
+        let (position_pda, _) = env.position_pda(&offer_pda, position_id);
+        let data = touchline::instruction::FillOffer { position_id, fill_pot }.data();
+        let metas = touchline::accounts::FillOffer {
+            taker: taker.pubkey(), market: market_pda, offer: offer_pda, position: position_pda,
+            mint: env.mint, taker_ata, vault: vault_pda, token_program: token_program_id(),
+            system_program: system_program_id(),
+        }.to_account_metas(None);
+        send_ix(&mut env.svm, &[&taker], data, metas);
+    }
+
+    // The market is now at exactly MAX_POT_PER_MARKET (5,000 USDC).
+    let acc = env.svm.get_account(&market_pda).unwrap();
+    let market = touchline::state::Market::try_deserialize(&mut &acc.data[..]).unwrap();
+    assert_eq!(market.total_pot, 5_000_000_000);
+
+    // One more 100-USDC fill would breach the per-market cap -> rejected.
+    let position_id: u64 = 51;
+    let (position_pda, _) = env.position_pda(&offer_pda, position_id);
     let data = touchline::instruction::FillOffer { position_id, fill_pot }.data();
     let metas = touchline::accounts::FillOffer {
         taker: taker.pubkey(), market: market_pda, offer: offer_pda, position: position_pda,

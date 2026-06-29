@@ -12,7 +12,7 @@ pub use state::*;
 declare_id!("21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ");
 
 declare_program!(mock_oracle);
-use mock_oracle::{cpi as mock_cpi, program::MockOracle};
+use crate::mock_oracle::{cpi as mock_cpi, program::MockOracle};
 
 #[program]
 pub mod touchline {
@@ -31,6 +31,22 @@ pub mod touchline {
         msg!("spike CPI returned: {}", returned);
         require!(returned == value, error::ErrorCode::CustomError);
         Ok(())
+    }
+
+    pub fn create_market(ctx: Context<CreateMarket>, fixture_id: u64, stat_key: u32, predicate: Predicate) -> Result<()> {
+        instructions::create_market::handler(ctx, fixture_id, stat_key, predicate)
+    }
+
+    pub fn post_offer(ctx: Context<PostOffer>, offer_id: u64, maker_side: Side, price_yes_bps: u16, pot: u64) -> Result<()> {
+        instructions::post_offer::handler(ctx, offer_id, maker_side, price_yes_bps, pot)
+    }
+
+    pub fn cancel_offer(ctx: Context<CancelOffer>) -> Result<()> {
+        instructions::cancel_offer::handler(ctx)
+    }
+
+    pub fn fill_offer(ctx: Context<FillOffer>, position_id: u64, fill_pot: u64) -> Result<()> {
+        instructions::fill_offer::handler(ctx, position_id, fill_pot)
     }
 }
 

@@ -18,4 +18,11 @@ pub mod mock_oracle {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         initialize::handler(ctx)
     }
+
+    pub fn returns_bool(_ctx: Context<NoAccounts>, value: bool) -> Result<bool> {
+        Ok(value)
+    }
 }
+
+#[derive(Accounts)]
+pub struct NoAccounts {}

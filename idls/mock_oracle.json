@@ -1,0 +1,61 @@
+{
+  "address": "7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S",
+  "metadata": {
+    "name": "mock_oracle",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "returns_bool",
+      "discriminator": [
+        103,
+        94,
+        197,
+        14,
+        215,
+        132,
+        166,
+        166
+      ],
+      "accounts": [],
+      "args": [
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "returns": "bool"
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "CustomError",
+      "msg": "Custom error message"
+    }
+  ],
+  "constants": [
+    {
+      "name": "SEED",
+      "type": "string",
+      "value": "\"anchor\""
+    }
+  ]
+}

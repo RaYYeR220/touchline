@@ -18,7 +18,8 @@ pub fn handler(
     stat2: Option<txtypes::StatTerm>,
     op: Option<txtypes::BinaryExpression>,
 ) -> Result<()> {
-    require!(!ctx.accounts.position.settled, ErrorCode::AlreadySettled);
+    // Double-settle is rejected by the `position.settled` account constraint on
+    // the Settle struct (single source of truth — no duplicate guard here).
 
     // Map the market predicate to the oracle's type.
     let p = ctx.accounts.market.predicate;
@@ -52,20 +53,38 @@ pub fn handler(
         op,
     )?;
 
-    // Anchor sets return data for bool return types via set_return_data.
-    // Read the single Borsh byte: 0=false, 1=true.
-    let (_, return_data) =
-        get_return_data().ok_or_else(|| error!(ErrorCode::OracleRejected))?;
-    let yes: bool = return_data
-        .first()
-        .copied()
-        .ok_or_else(|| error!(ErrorCode::OracleRejected))?
-        != 0;
+    // Read the oracle's verdict from the CPI return data. Anchor sets return
+    // data for bool return types via set_return_data, so the byte is 0=false,
+    // 1=true. We fail closed: the origin program id MUST be the pinned oracle,
+    // the payload MUST be exactly one byte, otherwise OracleRejected.
+    //
+    // I1 (mainnet integration / Plan 4): the real txoracle IDL has no `returns`
+    // field and defines a `PredicateFailed` error, so in production a FALSE
+    // predicate may REVERT instead of returning `false`. This get_return_data
+    // path is correct against the mock (which returns a bool) and already fails
+    // closed. Plan 4 must confirm whether txoracle.validate_stat returns `false`
+    // or reverts on a false predicate; if it reverts, NO-outcome settlement will
+    // need to CPI the negated predicate to obtain an affirmative `true`. Do not
+    // change behavior here until that is verified on mainnet.
+    let (ret_program, ret_data) =
+        get_return_data().ok_or(ErrorCode::OracleRejected)?;
+    require_keys_eq!(
+        ret_program,
+        ctx.accounts.oracle_program.key(),
+        ErrorCode::OracleRejected
+    );
+    require!(ret_data.len() == 1, ErrorCode::OracleRejected);
+    let yes: bool = ret_data[0] == 1;
 
     // Determine winner: maker wins if YES and maker=Yes, or NO and maker=No.
-    let pos = &ctx.accounts.position;
+    // Copy the values out before mutating so CEI ordering holds below.
+    let maker_side = ctx.accounts.position.maker_side;
+    let pot = ctx.accounts.position.pot;
     let winner_is_maker =
-        (yes && pos.maker_side == Side::Yes) || (!yes && pos.maker_side == Side::No);
+        (yes && maker_side == Side::Yes) || (!yes && maker_side == Side::No);
+
+    // CEI: record the state change BEFORE the external token transfer.
+    ctx.accounts.position.settled = true;
 
     // Build the PDA signer seeds for the market (vault authority).
     let market = &ctx.accounts.market;
@@ -89,7 +108,6 @@ pub fn handler(
         ctx.accounts.taker_ata.to_account_info()
     };
 
-    let pot = pos.pot;
     token::transfer(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.key(),
@@ -103,7 +121,6 @@ pub fn handler(
         pot,
     )?;
 
-    ctx.accounts.position.settled = true;
     Ok(())
 }
 
@@ -122,13 +139,14 @@ pub struct Settle<'info> {
     pub mint: Account<'info, Mint>,
     #[account(mut, seeds = [VAULT_SEED, market.key().as_ref()], bump = market.vault_bump)]
     pub vault: Account<'info, TokenAccount>,
-    #[account(mut, token::mint = mint)]
+    #[account(mut, token::mint = mint, token::authority = position.maker)]
     pub maker_ata: Account<'info, TokenAccount>,
-    #[account(mut, token::mint = mint)]
+    #[account(mut, token::mint = mint, token::authority = position.taker)]
     pub taker_ata: Account<'info, TokenAccount>,
     /// CHECK: passed to the oracle CPI; validated by the oracle program.
     pub daily_scores_merkle_roots: UncheckedAccount<'info>,
-    /// CHECK: oracle program (mock in tests, real txoracle in prod).
+    #[account(address = market.oracle_program)]
+    /// CHECK: pinned to the market's recorded oracle program; only a CPI target.
     pub oracle_program: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
 }

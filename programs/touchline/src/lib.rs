@@ -11,8 +11,7 @@ pub use state::*;
 
 declare_id!("21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ");
 
-declare_program!(mock_oracle);
-use crate::mock_oracle::{cpi as mock_cpi, program::MockOracle};
+declare_program!(txoracle);
 
 #[program]
 pub mod touchline {
@@ -22,22 +21,22 @@ pub mod touchline {
         initialize::handler(ctx)
     }
 
-    pub fn spike_read_bool(ctx: Context<SpikeReadBool>, value: bool) -> Result<()> {
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.mock_oracle_program.key(),
-            mock_cpi::accounts::ReturnsBool {},
-        );
-        let returned: bool = mock_cpi::returns_bool(cpi_ctx, value)?.get();
-        msg!("spike CPI returned: {}", returned);
-        require!(returned == value, error::ErrorCode::CustomError);
-        Ok(())
-    }
-
-    pub fn create_market(ctx: Context<CreateMarket>, fixture_id: u64, stat_key: u32, predicate: Predicate) -> Result<()> {
+    pub fn create_market(
+        ctx: Context<CreateMarket>,
+        fixture_id: u64,
+        stat_key: u32,
+        predicate: Predicate,
+    ) -> Result<()> {
         instructions::create_market::handler(ctx, fixture_id, stat_key, predicate)
     }
 
-    pub fn post_offer(ctx: Context<PostOffer>, offer_id: u64, maker_side: Side, price_yes_bps: u16, pot: u64) -> Result<()> {
+    pub fn post_offer(
+        ctx: Context<PostOffer>,
+        offer_id: u64,
+        maker_side: Side,
+        price_yes_bps: u16,
+        pot: u64,
+    ) -> Result<()> {
         instructions::post_offer::handler(ctx, offer_id, maker_side, price_yes_bps, pot)
     }
 
@@ -45,12 +44,34 @@ pub mod touchline {
         instructions::cancel_offer::handler(ctx)
     }
 
-    pub fn fill_offer(ctx: Context<FillOffer>, position_id: u64, fill_pot: u64) -> Result<()> {
+    pub fn fill_offer(
+        ctx: Context<FillOffer>,
+        position_id: u64,
+        fill_pot: u64,
+    ) -> Result<()> {
         instructions::fill_offer::handler(ctx, position_id, fill_pot)
     }
-}
 
-#[derive(Accounts)]
-pub struct SpikeReadBool<'info> {
-    pub mock_oracle_program: Program<'info, MockOracle>,
+    #[allow(clippy::too_many_arguments)]
+    pub fn settle(
+        ctx: Context<Settle>,
+        ts: i64,
+        fixture_summary: txoracle::types::ScoresBatchSummary,
+        fixture_proof: Vec<txoracle::types::ProofNode>,
+        main_tree_proof: Vec<txoracle::types::ProofNode>,
+        stat1: txoracle::types::StatTerm,
+        stat2: Option<txoracle::types::StatTerm>,
+        op: Option<txoracle::types::BinaryExpression>,
+    ) -> Result<()> {
+        instructions::settle::handler(
+            ctx,
+            ts,
+            fixture_summary,
+            fixture_proof,
+            main_tree_proof,
+            stat1,
+            stat2,
+            op,
+        )
+    }
 }

@@ -308,16 +308,20 @@ async function main() {
   console.log("             →", link(settleSig));
 
   // ── 13. Check winner payout ──────────────────────────────────────────────────
+  // Binary winner-take-all: with pot = TAKER_FILL and YES price = 5000 bps, each
+  // side locks pot * 50% = 500_000. On a YES win the maker receives the FULL pot
+  // (TAKER_FILL), so maker net = +taker_stake and taker net = −taker_stake.
+  const START = 10_000_000; // minted to each ATA
+  const yesStake = (TAKER_FILL * BigInt(PRICE_YES_BPS)) / 10_000n;
+  const takerStake = TAKER_FILL - yesStake;
   const makerBalance = await rpc.getTokenAccountBalance(makerAta).send();
   const takerBalance = await rpc.getTokenAccountBalance(takerAta).send();
 
-  console.log("\n=== Winner Payout ===");
-  console.log(`Maker (YES, winner): ${makerBalance.value.amount} lamports of test-USDC`);
-  console.log(`Taker (NO,  loser):  ${takerBalance.value.amount} lamports of test-USDC`);
-  console.log(
-    `Maker delta: +${Number(makerBalance.value.amount) - 9_000_000} (pot returned + win)`,
-  );
-  console.log("Winner: MAKER (YES side) received full pot of", Number(MAKER_POT + TAKER_FILL), "lamports");
+  console.log("\n=== Winner Payout (binary winner-take-all) ===");
+  console.log(`Pot (position): ${TAKER_FILL}  | maker locked ${yesStake} | taker locked ${takerStake}`);
+  console.log(`Maker (YES, winner): ${makerBalance.value.amount}  (net ${Number(makerBalance.value.amount) - START >= 0 ? "+" : ""}${Number(makerBalance.value.amount) - START})`);
+  console.log(`Taker (NO,  loser):  ${takerBalance.value.amount}  (net ${Number(takerBalance.value.amount) - START})`);
+  console.log(`Winner received the full pot (${TAKER_FILL}); maker net +${Number(takerStake)} = the taker's forfeited stake.`);
   console.log("\nDONE — full create→post→fill→settle loop confirmed on devnet.");
 }
 

@@ -30,3 +30,12 @@ this venue in subsequent milestones.
 anchor build
 cargo test
 ```
+
+## Deployment (Solana devnet)
+
+| Program | Address |
+| --- | --- |
+| `touchline` (venue) | [`21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ`](https://explorer.solana.com/address/21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ?cluster=devnet) |
+| `mock_oracle` (test oracle) | [`7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S`](https://explorer.solana.com/address/7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S?cluster=devnet) |
+
+Settlement verifies match outcomes against the TxLINE oracle (`txoracle`) on Solana.

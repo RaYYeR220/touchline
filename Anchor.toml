@@ -10,6 +10,10 @@ skip-lint = false
 mock_oracle = "7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S"
 touchline = "21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ"
 
+[programs.devnet]
+mock_oracle = "7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S"
+touchline = "21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ"
+
 [provider]
 cluster = "localnet"
 wallet = '~\.config\solana\id.json'

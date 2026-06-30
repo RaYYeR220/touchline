@@ -12,6 +12,8 @@ const BASE_PARAMS: ModelParams = {
   modelWeight: 0.5,
 };
 
+const FIXED_NOW_MS = 1_700_000_000_000; // constant — keeps helpers deterministic
+
 function makeState(overrides: Partial<MatchState> = {}): MatchState {
   return {
     fixtureId: 1,
@@ -19,13 +21,13 @@ function makeState(overrides: Partial<MatchState> = {}): MatchState {
     minute: 0,
     p1Goals: 0,
     p2Goals: 0,
-    updatedMs: Date.now(),
+    updatedMs: FIXED_NOW_MS,
     ...overrides,
   };
 }
 
 function makeLine(impliedYesBps: number): MarketLine {
-  return { fixtureId: 1, statKey: 1, impliedYesBps, updatedMs: Date.now() };
+  return { fixtureId: 1, statKey: 1, impliedYesBps, updatedMs: FIXED_NOW_MS };
 }
 
 // ---------------------------------------------------------------------------

@@ -171,7 +171,10 @@ export function reduceScore(
 
   const stats = asStatsRecord(d["Stats"] ?? d["stats"]);
   // Full-game goals: stat keys 1 and 2.
-  // Use the stat value if non-zero, otherwise carry forward from prev.
+  // Monotonic-goals assumption: goal counts only ever increase during a match.
+  // A value of 0 in a stats message means "not present in this update", NOT
+  // "a previously scored goal was reversed". We therefore carry forward the
+  // previous non-zero value when the field is absent or 0.
   const rawP1 = statFromRecord(stats, 1);
   const rawP2 = statFromRecord(stats, 2);
   const p1Goals = rawP1 !== 0 ? rawP1 : (prev?.p1Goals ?? 0);

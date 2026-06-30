@@ -96,18 +96,23 @@ export function checkIntent(
   budget: RiskBudget,
   limits: RiskLimits,
 ): CheckResult {
-  // Rule 1: stale feed — block everything.
+  // cancelOffer is risk-reducing (removes exposure) — always allowed.
+  if (intent.kind === "cancelOffer") {
+    return { ok: true };
+  }
+
+  // Rule 1: stale feed — block everything else.
   if (budget.feedStaleMs > limits.maxFeedStalenessMs) {
     return { ok: false, reason: `feed stale (${budget.feedStaleMs} ms > ${limits.maxFeedStalenessMs} ms)` };
   }
 
-  // Rule 2: no-trade phase — block everything.
+  // Rule 2: no-trade phase — block everything else.
   if (limits.noTradePhases.includes(budget.phase)) {
     return { ok: false, reason: `no-trade phase (${budget.phase})` };
   }
 
-  // createMarket and cancelOffer never add exposure — allow past all remaining rules.
-  if (intent.kind === "createMarket" || intent.kind === "cancelOffer") {
+  // createMarket never adds exposure — allow past all remaining rules.
+  if (intent.kind === "createMarket") {
     return { ok: true };
   }
 

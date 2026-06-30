@@ -6,6 +6,8 @@ import { reduceScore, lineFromOdds } from "./matchState.js";
 
 export interface PerceiveOptions extends StreamOptions {
   fixtureId?: number;
+  /** Override wall-clock source for testability. Defaults to () => Date.now(). */
+  nowMs?: () => number;
 }
 
 export interface PerceiveEvent {
@@ -28,7 +30,8 @@ export async function* perceive(
   session: TxlineSession,
   opts: PerceiveOptions = {},
 ): AsyncGenerator<PerceiveEvent> {
-  const { fixtureId, ...streamOpts } = opts;
+  const { fixtureId, nowMs: nowMsFn, ...streamOpts } = opts;
+  const nowMs = nowMsFn ?? (() => Date.now());
 
   // Wrap each stream in a generator that tags its events, then interleave via
   // a shared queue driven by Promise racing.
@@ -46,7 +49,6 @@ export async function* perceive(
   let oddsPending:   Promise<IteratorResult<(typeof odds   extends AsyncGenerator<infer T> ? T : never)>> | null = null;
 
   let state: MatchState | undefined;
-  const nowMs = () => Date.now();
 
   while (!scoresDone || !oddsDone) {
     if (!scoresDone && scoresPending === null) {

@@ -113,6 +113,11 @@ describe("checkIntent — Rule 1: stale feed", () => {
     const budget: RiskBudget = { ...HEALTHY_BUDGET, feedStaleMs: 10_000 };
     expect(checkIntent(CREATE_INTENT, budget, LIMITS)).toEqual({ ok: true });
   });
+
+  it("always allows cancelOffer even when the feed is stale (cancel is risk-reducing)", () => {
+    const budget: RiskBudget = { ...HEALTHY_BUDGET, feedStaleMs: 999_999 };
+    expect(checkIntent(CANCEL_INTENT, budget, LIMITS)).toEqual({ ok: true });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -141,6 +146,11 @@ describe("checkIntent — Rule 2: no-trade phase", () => {
   it("also rejects createMarket in no-trade phase", () => {
     const budget: RiskBudget = { ...HEALTHY_BUDGET, phase: "NS" };
     expect(checkIntent(CREATE_INTENT, budget, LIMITS).ok).toBe(false);
+  });
+
+  it("always allows cancelOffer even in a no-trade phase (cancel is risk-reducing)", () => {
+    const budget: RiskBudget = { ...HEALTHY_BUDGET, phase: "F" };
+    expect(checkIntent(CANCEL_INTENT, budget, LIMITS)).toEqual({ ok: true });
   });
 
   it("allows postOffer in a live phase (H2)", () => {

@@ -11,5 +11,5 @@ const render =
   renderers.renderVisitor ??
   renderers.renderJavaScriptVisitor ??
   renderers.default;
-codama.accept(render("packages/venue-client/src/generated"));
-console.log("generated venue-client into packages/venue-client/src/generated");
+codama.accept(render("packages/venue-client"));
+console.log("generated venue-client into packages/venue-client");

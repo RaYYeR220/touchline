@@ -1,0 +1,18 @@
+{
+  "name": "@touchline/venue-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "gen": "node ../../scripts/gen-client.mjs"
+  },
+  "dependencies": {
+    "@solana/kit": "^6.10.0",
+    "@solana/program-client-core": "^6.10.0"
+  }
+}

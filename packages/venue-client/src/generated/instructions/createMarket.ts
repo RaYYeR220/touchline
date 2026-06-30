@@ -43,14 +43,14 @@ import {
   getAddressFromResolvedInstructionAccount,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
-import { findVaultPda } from "../pdas";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { findVaultPda } from "../pdas/index.js";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 import {
   getPredicateDecoder,
   getPredicateEncoder,
   type Predicate,
   type PredicateArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const CREATE_MARKET_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   103, 226, 97, 235, 200, 188, 251, 254,

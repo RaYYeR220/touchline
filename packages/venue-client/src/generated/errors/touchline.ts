@@ -12,7 +12,7 @@ import {
   type SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
   type SolanaError,
 } from "@solana/kit";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 
 /** CustomError: Custom error message */
 export const TOUCHLINE_ERROR__CUSTOM_ERROR = 0x1770; // 6000

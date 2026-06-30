@@ -6,12 +6,12 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./binaryExpression";
-export * from "./comparison";
-export * from "./marketStatus";
-export * from "./predicate";
-export * from "./proofNode";
-export * from "./scoreStat";
-export * from "./scoresUpdateStats";
-export * from "./side";
-export * from "./statTerm";
+export * from "./binaryExpression.js";
+export * from "./comparison.js";
+export * from "./marketStatus.js";
+export * from "./predicate.js";
+export * from "./proofNode.js";
+export * from "./scoreStat.js";
+export * from "./scoresUpdateStats.js";
+export * from "./side.js";
+export * from "./statTerm.js";

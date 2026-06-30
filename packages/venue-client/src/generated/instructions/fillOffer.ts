@@ -40,8 +40,8 @@ import {
   getNonNullResolvedInstructionInput,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
-import { findPositionPda, findVaultPda } from "../pdas";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { findPositionPda, findVaultPda } from "../pdas/index.js";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 
 export const FILL_OFFER_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   83, 15, 200, 85, 160, 80, 164, 61,

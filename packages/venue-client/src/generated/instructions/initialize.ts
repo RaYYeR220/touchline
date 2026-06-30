@@ -25,7 +25,7 @@ import {
   type InstructionWithData,
   type ReadonlyUint8Array,
 } from "@solana/kit";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 
 export const INITIALIZE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   175, 175, 109, 31, 13, 152, 155, 237,

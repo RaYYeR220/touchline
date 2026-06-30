@@ -21,7 +21,7 @@ import {
   getComparisonEncoder,
   type Comparison,
   type ComparisonArgs,
-} from ".";
+} from "./index.js";
 
 export type Predicate = { threshold: number; comparison: Comparison };
 

@@ -45,8 +45,8 @@ import {
   getAddressFromResolvedInstructionAccount,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
-import { findVaultPda } from "../pdas";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { findVaultPda } from "../pdas/index.js";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 import {
   getBinaryExpressionDecoder,
   getBinaryExpressionEncoder,
@@ -64,7 +64,7 @@ import {
   type ScoresUpdateStatsArgs,
   type StatTerm,
   type StatTermArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const SETTLE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   175, 42, 185, 87, 144, 131, 102, 212,

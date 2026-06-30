@@ -47,7 +47,7 @@ import {
   getSideEncoder,
   type Side,
   type SideArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const POSITION_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   170, 188, 143, 228, 122, 64, 247, 208,

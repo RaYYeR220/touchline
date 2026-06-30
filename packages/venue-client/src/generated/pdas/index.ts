@@ -6,6 +6,6 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./offer";
-export * from "./position";
-export * from "./vault";
+export * from "./offer.js";
+export * from "./position.js";
+export * from "./vault.js";

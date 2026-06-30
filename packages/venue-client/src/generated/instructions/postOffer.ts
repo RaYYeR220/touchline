@@ -42,14 +42,14 @@ import {
   getNonNullResolvedInstructionInput,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
-import { findOfferPda, findVaultPda } from "../pdas";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { findOfferPda, findVaultPda } from "../pdas/index.js";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 import {
   getSideDecoder,
   getSideEncoder,
   type Side,
   type SideArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const POST_OFFER_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   73, 150, 193, 114, 200, 133, 74, 58,

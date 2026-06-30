@@ -49,7 +49,7 @@ import {
   type MarketStatusArgs,
   type Predicate,
   type PredicateArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const MARKET_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   219, 190, 213, 55, 0, 227, 198, 154,

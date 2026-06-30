@@ -6,9 +6,9 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./cancelOffer";
-export * from "./createMarket";
-export * from "./fillOffer";
-export * from "./initialize";
-export * from "./postOffer";
-export * from "./settle";
+export * from "./cancelOffer.js";
+export * from "./createMarket.js";
+export * from "./fillOffer.js";
+export * from "./initialize.js";
+export * from "./postOffer.js";
+export * from "./settle.js";

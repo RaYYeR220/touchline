@@ -30,7 +30,7 @@ import {
   type ProofNodeArgs,
   type ScoreStat,
   type ScoreStatArgs,
-} from ".";
+} from "./index.js";
 
 export type StatTerm = {
   statToProve: ScoreStat;

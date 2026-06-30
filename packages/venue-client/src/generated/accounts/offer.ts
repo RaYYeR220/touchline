@@ -45,7 +45,7 @@ import {
   getSideEncoder,
   type Side,
   type SideArgs,
-} from "../types";
+} from "../types/index.js";
 
 export const OFFER_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   215, 88, 60, 71, 170, 162, 73, 229,

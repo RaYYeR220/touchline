@@ -37,8 +37,8 @@ import {
   getAddressFromResolvedInstructionAccount,
   type ResolvedInstructionAccount,
 } from "@solana/program-client-core";
-import { findVaultPda } from "../pdas";
-import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs";
+import { findVaultPda } from "../pdas/index.js";
+import { TOUCHLINE_PROGRAM_ADDRESS } from "../programs/index.js";
 
 export const CANCEL_OFFER_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
   92, 203, 223, 40, 92, 89, 53, 119,

@@ -43,7 +43,7 @@ import {
   type OfferArgs,
   type Position,
   type PositionArgs,
-} from "../accounts";
+} from "../accounts/index.js";
 import {
   getCancelOfferInstructionAsync,
   getCreateMarketInstructionAsync,
@@ -69,8 +69,8 @@ import {
   type ParsedSettleInstruction,
   type PostOfferAsyncInput,
   type SettleAsyncInput,
-} from "../instructions";
-import { findOfferPda, findPositionPda, findVaultPda } from "../pdas";
+} from "../instructions/index.js";
+import { findOfferPda, findPositionPda, findVaultPda } from "../pdas/index.js";
 
 export const TOUCHLINE_PROGRAM_ADDRESS =
   "21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ" as Address<"21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ">;

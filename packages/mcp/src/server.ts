@@ -188,6 +188,16 @@ export const TOOL_NAMES = [
 // ---------------------------------------------------------------------------
 
 export function createMcpServer(): McpServer {
+  // Warn operators when write mode is active: the mock-oracle settle tool is
+  // permissionless and must never point at a real-value mint or mainnet.
+  if (writes()) {
+    console.error(
+      "[touchline-mcp] WARN: write mode enabled (TOUCHLINE_MCP_ALLOW_WRITES=1). " +
+      "The mock-oracle settle instruction is permissionless — DEVNET and throwaway " +
+      "test tokens only. Never use write mode with a real-value mint or on mainnet.",
+    );
+  }
+
   const server = new McpServer({
     name: "touchline",
     version: "0.1.0",
@@ -424,7 +434,7 @@ export function createMcpServer(): McpServer {
       if (!writes()) return writesError();
       try {
         const { executor, network } = await getWriteClient();
-        const sig = await executor.execute({
+        const { sig } = await executor.execute({
           kind: "createMarket",
           fixtureId,
           statKey,
@@ -476,7 +486,7 @@ export function createMcpServer(): McpServer {
       if (!writes()) return writesError();
       try {
         const { executor, network } = await getWriteClient();
-        const sig = await executor.execute({
+        const { sig: postSig } = await executor.execute({
           kind: "postOffer",
           market: market as Address,
           side,
@@ -488,8 +498,8 @@ export function createMcpServer(): McpServer {
             {
               type: "text" as const,
               text: JSON.stringify({
-                signature: sig,
-                explorer: explorerLink(sig, network),
+                signature: postSig,
+                explorer: explorerLink(postSig, network),
               }),
             },
           ],
@@ -533,7 +543,7 @@ export function createMcpServer(): McpServer {
           priceYesBps,
           remainingPot: BigInt(remainingPot),
         };
-        const sig = await executor.execute({
+        const { sig: fillSig } = await executor.execute({
           kind: "fillOffer",
           offer: offerView,
           fillPot: BigInt(fillPot),
@@ -543,8 +553,8 @@ export function createMcpServer(): McpServer {
             {
               type: "text" as const,
               text: JSON.stringify({
-                signature: sig,
-                explorer: explorerLink(sig, network),
+                signature: fillSig,
+                explorer: explorerLink(fillSig, network),
               }),
             },
           ],
@@ -587,7 +597,7 @@ export function createMcpServer(): McpServer {
           priceYesBps,
           remainingPot: BigInt(remainingPot),
         };
-        const sig = await executor.execute({
+        const { sig: cancelSig } = await executor.execute({
           kind: "cancelOffer",
           offer: offerView,
         });
@@ -596,8 +606,8 @@ export function createMcpServer(): McpServer {
             {
               type: "text" as const,
               text: JSON.stringify({
-                signature: sig,
-                explorer: explorerLink(sig, network),
+                signature: cancelSig,
+                explorer: explorerLink(cancelSig, network),
               }),
             },
           ],

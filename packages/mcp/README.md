@@ -49,3 +49,16 @@ Add to your MCP client configuration (e.g. Claude Desktop's `claude_desktop_conf
 ## Read-only by default
 
 The server starts in read-only mode. All write tools (`create_market`, `post_offer`, `fill_offer`, `cancel_offer`, `settle`) respond with an explanatory error unless `TOUCHLINE_MCP_ALLOW_WRITES=1` is set. The wallet file is not loaded until the first write call.
+
+## Security: write mode is devnet/testing only
+
+**IMPORTANT — never run with `TOUCHLINE_MCP_ALLOW_WRITES=1` against mainnet or a real-value mint.**
+
+The `settle` tool calls a permissionless mock-oracle instruction that lets any caller decide the outcome of any market by supplying an arbitrary stat value. This design is intentional for devnet testing but creates an obvious critical risk on mainnet: anyone with MCP write access could drain all funds by faking outcomes.
+
+When enabling write mode, verify:
+- `RPC_URL` points to **devnet** (`https://api.devnet.solana.com` or similar)
+- The collateral mint (`usdcMint` in agent config) is a throwaway test token with no real value
+- The wallet keypair has no real funds on mainnet
+
+The server logs a warning to stderr at startup whenever write mode is active.

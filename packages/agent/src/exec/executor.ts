@@ -31,6 +31,8 @@ import {
   getFillOfferInstructionAsync,
   getCancelOfferInstructionAsync,
   findVaultPda,
+  findOfferPda,
+  findPositionPda,
   Comparison,
   Side,
 } from "@touchline/venue-client";
@@ -115,7 +117,7 @@ export class Executor {
     return String(sig);
   }
 
-  async execute(intent: Intent): Promise<string> {
+  async execute(intent: Intent): Promise<{ sig: string; market?: Address; offer?: Address; position?: Address }> {
     const { signer, cfg } = this;
 
     if (intent.kind === "createMarket") {
@@ -137,12 +139,14 @@ export class Executor {
         predicate: { threshold: intent.predicate.threshold, comparison },
         oracleProgram: cfg.oracleProgram,
       });
-      return this._send(ix);
+      const sig = await this._send(ix);
+      return { sig, market };
     }
 
     if (intent.kind === "postOffer") {
       const offerId = this._offerId++;
       const makerAta = await getAtaAddress(cfg.usdcMint, signer.address);
+      const [offer] = await findOfferPda({ market: intent.market, maker: signer.address, offerId });
       const ix = await getPostOfferInstructionAsync({
         maker: signer,
         market: intent.market,
@@ -153,12 +157,14 @@ export class Executor {
         priceYesBps: intent.priceYesBps,
         pot: intent.pot,
       });
-      return this._send(ix);
+      const sig = await this._send(ix);
+      return { sig, offer };
     }
 
     if (intent.kind === "fillOffer") {
       const positionId = this._positionId++;
       const takerAta = await getAtaAddress(cfg.usdcMint, signer.address);
+      const [position] = await findPositionPda({ offer: intent.offer.address, positionId });
       const ix = await getFillOfferInstructionAsync({
         taker: signer,
         market: intent.offer.market,
@@ -168,7 +174,8 @@ export class Executor {
         positionId,
         fillPot: intent.fillPot,
       });
-      return this._send(ix);
+      const sig = await this._send(ix);
+      return { sig, position };
     }
 
     // cancelOffer
@@ -180,6 +187,7 @@ export class Executor {
       mint: cfg.usdcMint,
       makerAta,
     });
-    return this._send(ix);
+    const sig = await this._send(ix);
+    return { sig };
   }
 }

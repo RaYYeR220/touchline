@@ -82,7 +82,15 @@ function describeIntent(intent: Intent): string {
   }
 }
 
-/** Apply locked-stake delta to budget after a confirmed execution. */
+/**
+ * Update openExposure (and optionally realizedPnl) after a confirmed intent.
+ *
+ * Accounting:
+ *   postOffer  → add maker stake to openExposure
+ *   fillOffer  → add taker (counter) stake to openExposure
+ *   cancelOffer → release maker stake from openExposure (bidirectional)
+ *   settlement  → call releaseSettledPosition() instead
+ */
 function applyExposure(budget: RiskBudget, intent: Intent): void {
   if (intent.kind === "postOffer") {
     const stake =
@@ -96,15 +104,65 @@ function applyExposure(budget: RiskBudget, intent: Intent): void {
         ? (intent.fillPot * BigInt(10_000 - intent.offer.priceYesBps)) / 10_000n
         : (intent.fillPot * BigInt(intent.offer.priceYesBps)) / 10_000n;
     budget.openExposure += stake;
+  } else if (intent.kind === "cancelOffer") {
+    // Release the maker's locked stake; keep total non-negative.
+    const offerView = intent.offer;
+    const release =
+      offerView.makerSide === "Yes"
+        ? (offerView.remainingPot * BigInt(offerView.priceYesBps)) / 10_000n
+        : (offerView.remainingPot * BigInt(10_000 - offerView.priceYesBps)) / 10_000n;
+    budget.openExposure = budget.openExposure > release ? budget.openExposure - release : 0n;
   }
-  // cancelOffer reduces exposure; not tracked precisely in v1
 }
 
-/** Best-effort stat value from the current MatchState for keeper settlement. */
-function statValueFromState(state: MatchState, statKey: number): number {
+/**
+ * Called after a position is successfully settled.
+ * Releases the agent's stake from openExposure and updates realizedPnl.
+ *
+ * Accounting:
+ *   agentStake  = the portion the agent locked for this position
+ *   If agent wins: realizedPnl += (pot - agentStake)   (gain = counterparty stake)
+ *   If agent loses: realizedPnl -= agentStake           (loss = own stake)
+ */
+function releaseSettledPosition(
+  budget: RiskBudget,
+  position: PositionView,
+  agentAddress: string,
+  yesWon: boolean,
+): void {
+  // Determine agent's role and stake.
+  const agentIsMaker = String(position.maker) === agentAddress;
+  const agentIsYes =
+    (agentIsMaker && position.makerSide === "Yes") ||
+    (!agentIsMaker && position.makerSide === "No");
+
+  const yesFraction = BigInt(position.priceYesBps);
+  const noFraction = BigInt(10_000 - position.priceYesBps);
+  const agentStake = agentIsYes
+    ? (position.pot * yesFraction) / 10_000n
+    : (position.pot * noFraction) / 10_000n;
+
+  // Release locked stake.
+  budget.openExposure = budget.openExposure > agentStake ? budget.openExposure - agentStake : 0n;
+
+  // Update realized PnL.
+  const agentWon = agentIsYes === yesWon;
+  if (agentWon) {
+    budget.realizedPnl += position.pot - agentStake; // gain = counterparty stake
+  } else {
+    budget.realizedPnl -= agentStake; // loss = own stake
+  }
+}
+
+/**
+ * Return the stat value for the given statKey from live MatchState.
+ * Returns undefined for unknown stat keys — callers must skip settlement
+ * rather than auto-settling against a fabricated 0.
+ */
+function statValueFromState(state: MatchState, statKey: number): number | undefined {
   if (statKey === 1) return state.p1Goals;
   if (statKey === 2) return state.p2Goals;
-  return 0;
+  return undefined; // unknown stat key — refuse to settle
 }
 
 // ---------------------------------------------------------------------------
@@ -234,9 +292,58 @@ export async function runAgent(params: RunAgentParams): Promise<void> {
       }
 
       try {
-        const sig = await executor.execute(intent);
-        console.log(`[tick ${tick}]   SENT     ${desc} sig=${sig}`);
+        const result = await executor.execute(intent);
+        console.log(`[tick ${tick}]   SENT     ${desc} sig=${result.sig}`);
         applyExposure(budget, intent);
+
+        // Populate local registry so strategies and keeper see non-empty state.
+        if (intent.kind === "createMarket" && result.market !== undefined) {
+          const marketAddr = result.market;
+          knownMarkets.set(String(marketAddr), {
+            address: marketAddr,
+            fixtureId: intent.fixtureId,
+            statKey: intent.statKey,
+            predicate: intent.predicate,
+            status: "Open",
+            totalPot: 0n,
+            oracleProgram: cfg.oracleProgram,
+          });
+        } else if (intent.kind === "postOffer" && result.offer !== undefined) {
+          const offerAddr = result.offer;
+          knownOffers.set(String(offerAddr), {
+            address: offerAddr,
+            market: intent.market,
+            maker: executor.signer.address,
+            makerSide: intent.side,
+            priceYesBps: intent.priceYesBps,
+            remainingPot: intent.pot,
+          });
+        } else if (intent.kind === "fillOffer" && result.position !== undefined) {
+          const posAddr = result.position;
+          knownPositions.set(String(posAddr), {
+            address: posAddr,
+            market: intent.offer.market,
+            maker: intent.offer.maker,
+            taker: executor.signer.address,
+            makerSide: intent.offer.makerSide,
+            priceYesBps: intent.offer.priceYesBps,
+            pot: intent.fillPot,
+            settled: false,
+          });
+          // Decrement matched offer's remainingPot.
+          const offerKey = String(intent.offer.address);
+          const existing = knownOffers.get(offerKey);
+          if (existing !== undefined) {
+            const updated = { ...existing, remainingPot: existing.remainingPot - intent.fillPot };
+            if (updated.remainingPot <= 0n) {
+              knownOffers.delete(offerKey);
+            } else {
+              knownOffers.set(offerKey, updated);
+            }
+          }
+        } else if (intent.kind === "cancelOffer") {
+          knownOffers.delete(String(intent.offer.address));
+        }
       } catch (err) {
         console.error(
           `[tick ${tick}]   ERR      ${desc}:`,
@@ -252,10 +359,24 @@ export async function runAgent(params: RunAgentParams): Promise<void> {
         const market = knownMarkets.get(String(position.market));
         if (market === undefined) continue;
         const statValue = statValueFromState(ctx.state, market.statKey);
+        if (statValue === undefined) {
+          // Refuse to settle with a fabricated value for unknown stat keys.
+          console.log(`[tick ${tick}]   SKIP_SETTLE position=${addr}: unknown statKey=${market.statKey}`);
+          continue;
+        }
         try {
           const settleSig = await keeper.settle(position, market, statValue);
           console.log(`[tick ${tick}]   SETTLED  position=${addr} sig=${settleSig}`);
-          knownPositions.set(addr, { ...position, settled: true });
+          const settled = { ...position, settled: true };
+          knownPositions.set(addr, settled);
+
+          // Determine YES/NO outcome and update risk budget.
+          const pred = market.predicate;
+          let yesWon: boolean;
+          if (pred.comparison === "GreaterThan") yesWon = statValue > pred.threshold;
+          else if (pred.comparison === "LessThan") yesWon = statValue < pred.threshold;
+          else yesWon = statValue === pred.threshold;
+          releaseSettledPosition(budget, position, String(executor.signer.address), yesWon);
         } catch (err) {
           console.error(
             `[tick ${tick}]   SETTLE_ERR position=${addr}:`,

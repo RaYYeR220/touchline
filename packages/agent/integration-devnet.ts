@@ -44,7 +44,7 @@ const MOCK_ORACLE = address("7uQHgENc27tcpP1svYShb6XUgxdzQTEX8xXrWDKUk57S");
 const VENUE_PROGRAM = address("21zXPvXZYPnPu8sCSQ5b8Ly76DXNjWUS2MX8jQwgesLJ");
 
 // ─── Test parameters ──────────────────────────────────────────────────────────
-const FIXTURE_ID = 99991;           // fake WC fixture for smoke
+const FIXTURE_ID = Number(process.env["FIXTURE_ID"] ?? 990013); // unique per run (override via env)
 const STAT_KEY   = 1;               // P1 total goals
 const THRESHOLD  = 1;               // > 1 goal = YES
 const COMPARISON = Comparison.GreaterThan;
@@ -250,7 +250,7 @@ async function main() {
   const makerExec = new Executor(rpc, rpcSubscriptions, wallet, cfg);
   const marketAddr = await deriveMarketPda(FIXTURE_ID, STAT_KEY, THRESHOLD, COMPARISON);
 
-  const createMarketSig = await makerExec.execute({
+  const { sig: createMarketSig } = await makerExec.execute({
     kind: "createMarket",
     fixtureId: FIXTURE_ID,
     statKey: STAT_KEY,
@@ -262,7 +262,7 @@ async function main() {
   console.log("Market PDA:    ", marketAddr);
 
   // ── 9. PostOffer ─────────────────────────────────────────────────────────────
-  const postOfferSig = await makerExec.execute({
+  const { sig: postOfferSig } = await makerExec.execute({
     kind: "postOffer",
     market: marketAddr,
     side: "Yes",
@@ -284,7 +284,7 @@ async function main() {
   };
 
   const takerExec = new Executor(rpc, rpcSubscriptions, taker, cfg);
-  const fillOfferSig = await takerExec.execute({
+  const { sig: fillOfferSig } = await takerExec.execute({
     kind: "fillOffer",
     offer: offerView,
     fillPot: TAKER_FILL,

@@ -1,0 +1,30 @@
+{
+  "name": "@touchline/x402",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "client": "tsx src/client.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@touchline/agent": "*",
+    "@x402/core": "^2.17.0",
+    "@x402/express": "^2.17.0",
+    "@x402/fetch": "^2.17.0",
+    "@x402/svm": "^2.17.0",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

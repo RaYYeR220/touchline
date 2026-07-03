@@ -48,7 +48,7 @@ pub fn handler(
 pub struct PostOffer<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
-    #[account(mut, has_one = mint)]
+    #[account(has_one = mint)]
     pub market: Account<'info, Market>,
     #[account(
         init,

@@ -147,11 +147,20 @@ fn send_ix(svm: &mut LiteSVM, signers: &[&Keypair], data: Vec<u8>, metas: Vec<so
     svm.send_transaction(tx).unwrap();
 }
 
-fn send_ix_expect_err(svm: &mut LiteSVM, signers: &[&Keypair], data: Vec<u8>, metas: Vec<solana_instruction::AccountMeta>) {
+/// Assert a transaction fails with a specific anchor error code (by name or hex value in logs).
+fn send_ix_expect_error_code(svm: &mut LiteSVM, signers: &[&Keypair], data: Vec<u8>, metas: Vec<solana_instruction::AccountMeta>, error_name: &str, error_hex: &str) {
     let ix = Instruction { program_id: touchline::ID, accounts: metas, data };
     let msg = Message::new(&[ix], Some(&signers[0].pubkey()));
     let tx = Transaction::new(signers, msg, svm.latest_blockhash());
-    assert!(svm.send_transaction(tx).is_err(), "expected transaction to fail");
+    let err = svm.send_transaction(tx).expect_err("expected transaction to fail");
+    let logs_str = err.meta.logs.join(" ");
+    assert!(
+        logs_str.contains(error_name) || logs_str.contains(error_hex),
+        "expected {} error ({}), got logs: {}",
+        error_name,
+        error_hex,
+        logs_str,
+    );
 }
 
 #[test]
@@ -457,7 +466,8 @@ fn test_fill_cap_per_fill_rejected() {
         mint: env.mint, taker_ata, vault: vault_pda, token_program: token_program_id(),
         system_program: system_program_id(),
     }.to_account_metas(None);
-    send_ix_expect_err(&mut env.svm, &[&taker], data, metas);
+    // FillCapExceeded = anchor error 6004 = 0x1774
+    send_ix_expect_error_code(&mut env.svm, &[&taker], data, metas, "FillCapExceeded", "0x1774");
 }
 
 #[test]
@@ -532,7 +542,8 @@ fn test_market_cap_cumulative_rejected() {
         mint: env.mint, taker_ata, vault: vault_pda, token_program: token_program_id(),
         system_program: system_program_id(),
     }.to_account_metas(None);
-    send_ix_expect_err(&mut env.svm, &[&taker], data, metas);
+    // MarketCapExceeded = anchor error 6005 = 0x1775
+    send_ix_expect_error_code(&mut env.svm, &[&taker], data, metas, "MarketCapExceeded", "0x1775");
 }
 
 #[test]
@@ -561,7 +572,7 @@ fn test_post_offer_invalid_price_rejected() {
     let offer_id: u64 = 1;
     let (offer_pda, _) = env.offer_pda(&market_pda, &maker.pubkey(), offer_id);
 
-    // price_yes_bps = 0 -> rejected
+    // price_yes_bps = 0 -> rejected (InvalidPrice = anchor error 6001 = 0x1771)
     let data = touchline::instruction::PostOffer {
         offer_id, maker_side: touchline::state::Side::Yes, price_yes_bps: 0, pot: 10_000_000,
     }.data();
@@ -569,9 +580,9 @@ fn test_post_offer_invalid_price_rejected() {
         maker: maker.pubkey(), market: market_pda, offer: offer_pda, mint: env.mint,
         maker_ata, vault: vault_pda, token_program: token_program_id(), system_program: system_program_id(),
     }.to_account_metas(None);
-    send_ix_expect_err(&mut env.svm, &[&maker], data, metas);
+    send_ix_expect_error_code(&mut env.svm, &[&maker], data, metas, "InvalidPrice", "0x1771");
 
-    // price_yes_bps = 10000 -> rejected
+    // price_yes_bps = 10000 -> rejected (InvalidPrice)
     let data = touchline::instruction::PostOffer {
         offer_id, maker_side: touchline::state::Side::Yes, price_yes_bps: 10000, pot: 10_000_000,
     }.data();
@@ -579,5 +590,85 @@ fn test_post_offer_invalid_price_rejected() {
         maker: maker.pubkey(), market: market_pda, offer: offer_pda, mint: env.mint,
         maker_ata, vault: vault_pda, token_program: token_program_id(), system_program: system_program_id(),
     }.to_account_metas(None);
-    send_ix_expect_err(&mut env.svm, &[&maker], data, metas);
+    send_ix_expect_error_code(&mut env.svm, &[&maker], data, metas, "InvalidPrice", "0x1771");
+
+    // price_yes_bps = 1 -> accepted (lower boundary)
+    let offer_id_lo: u64 = 2;
+    let (offer_pda_lo, _) = env.offer_pda(&market_pda, &maker.pubkey(), offer_id_lo);
+    let data = touchline::instruction::PostOffer {
+        offer_id: offer_id_lo, maker_side: touchline::state::Side::Yes, price_yes_bps: 1, pot: 10_000_000,
+    }.data();
+    let metas = touchline::accounts::PostOffer {
+        maker: maker.pubkey(), market: market_pda, offer: offer_pda_lo, mint: env.mint,
+        maker_ata, vault: vault_pda, token_program: token_program_id(), system_program: system_program_id(),
+    }.to_account_metas(None);
+    send_ix(&mut env.svm, &[&maker], data, metas);
+
+    // price_yes_bps = 9999 -> accepted (upper boundary)
+    let offer_id_hi: u64 = 3;
+    let (offer_pda_hi, _) = env.offer_pda(&market_pda, &maker.pubkey(), offer_id_hi);
+    let data = touchline::instruction::PostOffer {
+        offer_id: offer_id_hi, maker_side: touchline::state::Side::Yes, price_yes_bps: 9999, pot: 10_000_000,
+    }.data();
+    let metas = touchline::accounts::PostOffer {
+        maker: maker.pubkey(), market: market_pda, offer: offer_pda_hi, mint: env.mint,
+        maker_ata, vault: vault_pda, token_program: token_program_id(), system_program: system_program_id(),
+    }.to_account_metas(None);
+    send_ix(&mut env.svm, &[&maker], data, metas);
+}
+
+/// M3: create_market must reject a mint whose decimals != 6.
+/// WrongMint = anchor error 6010 = 0x177a
+#[test]
+fn test_create_market_wrong_mint_decimals_rejected() {
+    let mut env = TestEnv::new();
+
+    // Create a mint with 9 decimals (non-6).
+    let bad_mint_kp = Keypair::new();
+    let bad_mint = bad_mint_kp.pubkey();
+    const MINT_LEN: usize = 82;
+    let rent = env.svm.minimum_balance_for_rent_exemption(MINT_LEN);
+    let create_acc_ix = solana_system_interface::instruction::create_account(
+        &env.payer.pubkey(),
+        &bad_mint,
+        rent,
+        MINT_LEN as u64,
+        &token_program_id(),
+    );
+    let init_ix = spl_token_interface::instruction::initialize_mint2(
+        &token_program_id(),
+        &bad_mint,
+        &env.mint_authority.pubkey(),
+        None,
+        9, // wrong decimals
+    ).unwrap();
+    let msg = solana_message::Message::new(&[create_acc_ix, init_ix], Some(&env.payer.pubkey()));
+    let tx = solana_transaction::Transaction::new(&[&env.payer, &bad_mint_kp], msg, env.svm.latest_blockhash());
+    env.svm.send_transaction(tx).expect("create bad-decimals mint failed");
+
+    let fixture_id: u64 = 99;
+    let stat_key: u32 = 1;
+    let threshold: i32 = 1;
+    let comparison: u8 = 0;
+    let (market_pda, _) = env.market_pda(fixture_id, stat_key, threshold, comparison);
+    let (vault_pda, _) = env.vault_pda(&market_pda);
+    let predicate = touchline::state::Predicate {
+        threshold,
+        comparison: touchline::state::Comparison::GreaterThan,
+    };
+
+    let data = touchline::instruction::CreateMarket {
+        fixture_id, stat_key, predicate, oracle_program: mock_oracle::ID,
+    }.data();
+    // Use the bad-decimals mint instead of the standard 6-decimal mint.
+    let metas = touchline::accounts::CreateMarket {
+        authority: env.payer.pubkey(),
+        mint: bad_mint,
+        market: market_pda,
+        vault: vault_pda,
+        token_program: token_program_id(),
+        system_program: system_program_id(),
+    }.to_account_metas(None);
+
+    send_ix_expect_error_code(&mut env.svm, &[&env.payer], data, metas, "WrongMint", "0x177a");
 }

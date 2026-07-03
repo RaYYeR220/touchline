@@ -81,7 +81,7 @@ export type PostOfferInstruction<
             AccountSignerMeta<TAccountMaker>
         : TAccountMaker,
       TAccountMarket extends string
-        ? WritableAccount<TAccountMarket>
+        ? ReadonlyAccount<TAccountMarket>
         : TAccountMarket,
       TAccountOffer extends string
         ? WritableAccount<TAccountOffer>
@@ -218,7 +218,7 @@ export async function getPostOfferInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     maker: { value: input.maker ?? null, isWritable: true },
-    market: { value: input.market ?? null, isWritable: true },
+    market: { value: input.market ?? null, isWritable: false },
     offer: { value: input.offer ?? null, isWritable: true },
     mint: { value: input.mint ?? null, isWritable: false },
     makerAta: { value: input.makerAta ?? null, isWritable: true },
@@ -357,7 +357,7 @@ export function getPostOfferInstruction<
   // Original accounts.
   const originalAccounts = {
     maker: { value: input.maker ?? null, isWritable: true },
-    market: { value: input.market ?? null, isWritable: true },
+    market: { value: input.market ?? null, isWritable: false },
     offer: { value: input.offer ?? null, isWritable: true },
     mint: { value: input.mint ?? null, isWritable: false },
     makerAta: { value: input.makerAta ?? null, isWritable: true },

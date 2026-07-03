@@ -29,6 +29,7 @@ pub fn handler(
 pub struct CreateMarket<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
+    #[account(constraint = mint.decimals == 6 @ crate::error::ErrorCode::WrongMint)]
     pub mint: Account<'info, Mint>,
     #[account(
         init,

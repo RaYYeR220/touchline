@@ -61,7 +61,7 @@ export interface AgentConfig {
 /** Phases that should never be traded (pre-match and all terminal phases). */
 const DEFAULT_NO_TRADE_PHASES: Phase[] = ["NS", "F", "FET", "FPE", "I", "A", "C", "TXCC", "TXCS", "P"];
 
-/** Default risk limits — conservative for a hackathon devnet deployment. */
+/** Default risk limits — conservative devnet defaults. */
 export const DEFAULT_RISK_LIMITS: RiskLimits = {
   /** 10 USDC per position. */
   maxStakePerPosition: 10_000_000n,

@@ -74,7 +74,7 @@ export const fadeTheLineStrategy: Strategy = {
     const { offers, markets } = ctx;
 
     for (const offer of offers) {
-      const market = findMarket(markets, String(offer.address));
+      const market = findMarket(markets, String(offer.market));
       if (market === undefined) continue;
 
       // Look up the prior for this stat key.

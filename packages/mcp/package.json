@@ -1,5 +1,5 @@
 {
-  "name": "@touchline/agent",
+  "name": "@touchline/mcp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./api": "./src/api.ts"
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -15,10 +15,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@solana/kit": "^6.10.0",
-    "@touchline/txline-sdk": "*",
-    "@touchline/venue-client": "*"
+    "@touchline/agent": "*",
+    "@touchline/venue-client": "*",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -8,6 +8,8 @@ settled trustlessly by reading match outcomes straight off Solana. No
 bookmaker sets the line, no operator decides the outcome, and no human has to
 be in the loop for a market to open, fill, or pay out.
 
+**Live dashboard → https://rayyer220.github.io/touchline/** (reads devnet arena state straight from the program, no backend).
+
 ```
 clients: strategy-sdk consumers, MCP tools, x402 /signal callers
         |

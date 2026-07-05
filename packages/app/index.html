@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Touchline — Arena Ticket Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+<div class="table-rail">
+  <div class="felt">
+    <div class="halfway"></div>
+    <div class="center-circle"></div>
+    <div class="center-spot"></div>
+
+    <div class="arena">
+
+      <!-- ================= §1  MASTHEAD ================= -->
+      <div class="ticket masthead deal">
+        <div class="notch-top"></div><div class="notch-bottom"></div>
+        <div class="mh-left">
+          <div class="wm-row">
+            <span class="wordmark">TOUCHLINE</span>
+            <span class="pass">ARENA&nbsp;PASS</span>
+            <span class="pass" id="source-indicator">DEMO DATA</span>
+          </div>
+          <div class="tagline">Post the line &middot; take the line &middot; the oracle settles the rest.</div>
+        </div>
+        <div class="mh-actions">
+          <div class="live-pill"><span class="live-dot"></span>LIVE &middot; SOLANA DEVNET</div>
+          <button class="connect-btn">Connect</button>
+        </div>
+      </div>
+
+      <!-- ================= §2  ARENA STATS RECEIPT ================= -->
+      <div class="ticket receipt deal">
+        <div class="notch-top"></div><div class="notch-bottom"></div>
+        <div class="receipt-item"><span class="label">24H Volume</span><div class="val" id="stat-volume">—</div></div>
+        <div class="receipt-item"><span class="label">Open Interest</span><div class="val" id="stat-oi">—</div></div>
+        <div class="receipt-item"><span class="label">Active Markets</span><div class="val" id="stat-active">—</div></div>
+        <div class="receipt-item"><span class="label">Agents Online</span><div class="val" id="stat-agents">—</div></div>
+        <div class="receipt-item"><span class="label">Total Settled</span><div class="val" id="stat-settled">—</div></div>
+      </div>
+
+      <!-- ================= §3–7  THREE-COLUMN SYMMETRIC GRID ================= -->
+      <div class="grid-3">
+
+        <!-- ---------- LEFT COLUMN : Matches + Settlements ---------- -->
+        <div class="col">
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>Live Matches</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Pitch Side &middot; <span id="matches-count">0</span> Fixtures</div>
+            </div>
+            <div class="matches" id="matches-list"></div>
+          </div>
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>Settlements</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Trustless &middot; Oracle-Paid</div>
+            </div>
+            <div class="settlements" id="settlements-list"></div>
+          </div>
+
+        </div><!-- /col-left -->
+
+        <!-- ---------- CENTER COLUMN : Markets + The Duel ---------- -->
+        <div class="col">
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>Open Markets</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Fair Value vs Quoted Line</div>
+            </div>
+            <div class="ticket markets-ticket deal">
+              <div class="notch-top"></div><div class="notch-bottom"></div>
+              <div class="mkt-head label">
+                <span>Fixture</span><span>Market</span><span>Fair</span><span>Line</span><span>Movement</span>
+              </div>
+              <div id="markets-rows"></div>
+            </div>
+          </div>
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>The Duel</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Maker vs Taker &middot; The Heart of the Arena</div>
+            </div>
+            <div class="duel">
+
+              <div class="ticket agent-card aegis deal">
+                <div class="notch-top"></div><div class="notch-bottom"></div>
+                <span class="agent-role">Maker &middot; Liquidity</span>
+                <div class="agent-name">AEGIS</div>
+                <div class="agent-stats">
+                  <div class="agent-stat-row"><span class="k">P&amp;L</span><span class="v" id="aegis-pnl">—</span></div>
+                  <div class="agent-stat-row"><span class="k">Exposure</span><span class="v" id="aegis-exposure">—</span></div>
+                  <div class="agent-stat-row"><span class="k" id="aegis-stat-label">Quoting</span><span class="v" id="aegis-stat-value">—</span></div>
+                </div>
+                <div class="risk-line">
+                  <span class="label" id="aegis-risk-label">Risk &middot; 0% of limit</span>
+                  <div class="gauge-track"><div class="gauge-fill" id="aegis-risk-fill" style="width:0%;"></div></div>
+                </div>
+              </div>
+
+              <div class="vs-badge">VS</div>
+
+              <div class="ticket agent-card vane deal">
+                <div class="notch-top"></div><div class="notch-bottom"></div>
+                <span class="agent-role">Taker &middot; Edge-Seeker</span>
+                <div class="agent-name">VANE</div>
+                <div class="agent-stats">
+                  <div class="agent-stat-row"><span class="k">P&amp;L</span><span class="v" id="vane-pnl">—</span></div>
+                  <div class="agent-stat-row"><span class="k" id="vane-stat-label">Open Positions</span><span class="v" id="vane-stat-value">—</span></div>
+                  <div class="agent-stat-row"><span class="k" id="vane-extra-label">Last Fill</span><span class="v small" id="vane-extra-value">—</span></div>
+                </div>
+                <div class="risk-line">
+                  <span class="label" id="vane-risk-label">Risk &middot; 0% of limit</span>
+                  <div class="gauge-track"><div class="gauge-fill" id="vane-risk-fill" style="width:0%;"></div></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- /col-center -->
+
+        <!-- ---------- RIGHT COLUMN : Fill Tape + Book Exposure ---------- -->
+        <div class="col">
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>Fill Tape</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Order &amp; Fill &middot; Newest First</div>
+            </div>
+            <div class="ticket tape-ticket deal">
+              <div class="notch-top"></div>
+              <div class="tape-head">*** ORDER &amp; FILL TAPE ***</div>
+              <div id="tape-rows"></div>
+              <div class="tape-zigzag"></div>
+            </div>
+          </div>
+
+          <div class="stack-block">
+            <div class="sec-head">
+              <h2>Book Exposure</h2>
+              <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+              <div class="sec-sub">Open Notional by Fixture</div>
+            </div>
+            <div class="ticket expo-ticket deal">
+              <div class="notch-top"></div><div class="notch-bottom"></div>
+              <div id="expo-rows"></div>
+            </div>
+          </div>
+
+        </div><!-- /col-right -->
+
+      </div><!-- /grid-3 -->
+
+      <!-- ================= §8  RISK DESK ================= -->
+      <div class="stack-block">
+        <div class="sec-head">
+          <h2>Risk Desk</h2>
+          <div class="sec-rule"><span class="dash"></span><span class="dia"></span><span class="dash"></span></div>
+          <div class="sec-sub">Per-Agent Limits &middot; Feed Health</div>
+        </div>
+        <div class="ticket risk-ticket deal">
+          <div class="notch-top"></div><div class="notch-bottom"></div>
+          <div class="risk-cols">
+
+            <div class="risk-col aegis">
+              <div class="risk-col-head">
+                <h3>AEGIS</h3>
+                <span class="agent-role" style="background:var(--aegis);">Maker</span>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-top"><span class="rk">Exposure vs Cap</span><span class="rv" id="risk-aegis-exp-label">—</span></div>
+                <div class="gauge-track"><div class="gauge-fill" id="risk-aegis-exp-fill" style="width:0%;"></div></div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-top"><span class="rk">Daily-Loss Headroom</span><span class="rv" id="risk-aegis-headroom-label">—</span></div>
+                <div class="gauge-track"><div class="gauge-fill" id="risk-aegis-headroom-fill" style="width:0%;"></div></div>
+              </div>
+              <div class="feed-health"><span class="feed-dot"></span>Oracle Feed &middot; NOMINAL</div>
+            </div>
+
+            <div class="risk-col vane">
+              <div class="risk-col-head">
+                <h3>VANE</h3>
+                <span class="agent-role" style="background:var(--vane);">Taker</span>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-top"><span class="rk">Exposure vs Cap</span><span class="rv" id="risk-vane-exp-label">—</span></div>
+                <div class="gauge-track"><div class="gauge-fill" id="risk-vane-exp-fill" style="width:0%;"></div></div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-row-top"><span class="rk">Daily-Loss Headroom</span><span class="rv" id="risk-vane-headroom-label">—</span></div>
+                <div class="gauge-track"><div class="gauge-fill" id="risk-vane-headroom-fill" style="width:0%;"></div></div>
+              </div>
+              <div class="feed-health"><span class="feed-dot"></span>Oracle Feed &middot; NOMINAL</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= FOOTER ================= -->
+      <div class="footer-strip">
+        <div class="footer-barcode"></div>
+        <span class="fine">NO CASH VALUE &middot; VOID IF SETTLED TWICE &middot; TOUCHLINE ARENA &middot; TXLINE ORACLE &middot; SOLANA DEVNET</span>
+        <div class="footer-barcode"></div>
+      </div>
+
+    </div><!-- /arena -->
+  </div><!-- /felt -->
+</div><!-- /table-rail -->
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

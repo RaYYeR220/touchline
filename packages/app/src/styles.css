@@ -1,0 +1,492 @@
+/* ======================================================================
+   TOKENS  —  betting-slip skin (from #18) on a symmetric grid (from #09)
+   ====================================================================== */
+:root{
+  --felt-green:#0c5c34;
+  --felt-deep:#062f1c;
+  --felt-hi:#1c8a52;
+  --rail-brown:#2c1c11;
+  --rail-brown-hi:#5a3a20;
+
+  --ticket-white:#f6f0dd;
+  --ticket-cream:#ece0c2;
+  --ticket-edge:#d6c69c;
+
+  --ink:#1c1913;
+  --ink-soft:#54493a;
+  --ink-faint:#8b7d63;
+
+  --stamp-red:#a5171d;
+  --stamp-red-deep:#7a1015;
+  --stamp-green:#1c6b3a;
+
+  --aegis:#1c4c73;
+  --aegis-deep:#0f3350;
+  --vane:#8f1d3a;
+  --vane-deep:#631329;
+
+  --gold:#b6912c;
+  --gold-hi:#d8b24e;
+  --perf: rgba(28,25,19,.32);
+  --chalk: rgba(246,240,221,.05);
+
+  --font-display:'Bebas Neue','Oswald',sans-serif;
+  --font-head:'Oswald',sans-serif;
+  --font-type:'Special Elite','IBM Plex Mono',monospace;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0; padding:0;
+  background:var(--felt-deep);
+  color:var(--ink);
+  font-family:var(--font-type);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+a{ color:inherit; }
+
+/* ======================================================================
+   TABLE / FELT SURFACE
+   ====================================================================== */
+.table-rail{
+  padding:26px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.35)),
+    repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 3px, transparent 3px 7px),
+    var(--rail-brown);
+  box-shadow: inset 0 0 60px rgba(0,0,0,.7);
+  min-height:100vh;
+}
+
+.felt{
+  position:relative;
+  min-height:calc(100vh - 52px);
+  border-radius:6px;
+  box-shadow: inset 0 0 160px rgba(0,0,0,.55), inset 0 0 42px rgba(0,0,0,.4);
+  background:
+    radial-gradient(ellipse at 18% 6%, rgba(255,255,255,.09), transparent 55%),
+    radial-gradient(ellipse at 85% 96%, rgba(0,0,0,.32), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.022) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.03) 0 2px, transparent 2px 4px),
+    var(--felt-green);
+  overflow:hidden;
+}
+
+/* faint chalk pitch markings — symmetric, behind everything */
+.halfway{ position:absolute; left:50%; top:0; bottom:0; width:2px; background:var(--chalk); z-index:0; pointer-events:none; }
+.center-circle{
+  position:absolute; left:50%; top:360px; width:300px; height:300px;
+  transform:translateX(-50%); border:2px solid var(--chalk); border-radius:50%;
+  z-index:0; pointer-events:none;
+}
+.center-spot{
+  position:absolute; left:50%; top:504px; width:8px; height:8px;
+  transform:translate(-50%,-50%); border-radius:50%;
+  background:rgba(246,240,221,.07); z-index:0; pointer-events:none;
+}
+
+.arena{
+  position:relative; z-index:1;
+  max-width:1440px; margin:0 auto;
+  padding:40px 44px 60px;
+}
+
+/* ======================================================================
+   SHARED TICKET PANEL  (paper, grain, perforations, tear-lines)
+   ====================================================================== */
+.ticket{
+  position:relative;
+  background:linear-gradient(158deg, var(--ticket-white) 0%, var(--ticket-cream) 100%);
+  border-radius:2px;
+  box-shadow:
+    0 20px 30px rgba(0,0,0,.34),
+    0 5px 9px rgba(0,0,0,.28),
+    0 0 0 1px rgba(0,0,0,.05);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.ticket:hover{
+  transform:translateY(-3px);
+  box-shadow:
+    0 26px 40px rgba(0,0,0,.42),
+    0 8px 12px rgba(0,0,0,.3),
+    0 0 0 1px rgba(0,0,0,.06);
+}
+/* paper grain */
+.ticket::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply; opacity:.65; border-radius:inherit;
+}
+/* punched perforation notches revealing felt */
+.notch-top,.notch-bottom{
+  position:absolute; left:12px; right:12px; height:14px;
+  background-image:radial-gradient(circle at center, var(--felt-green) 6px, transparent 6.6px);
+  background-size:20px 14px; background-repeat:repeat-x; background-position:2px 0;
+  pointer-events:none; z-index:3;
+}
+.notch-top{ top:-7px; }
+.notch-bottom{ bottom:-7px; transform:scaleY(-1); }
+.tear-top,.tear-bottom{
+  position:absolute; left:12px; right:12px; height:0;
+  border-top:2px dashed var(--perf); z-index:3;
+}
+.tear-top{ top:0; } .tear-bottom{ bottom:0; }
+
+/* ======================================================================
+   STAGGERED "DEAL-IN" LOAD ANIMATION  (tidy — no scatter, lands flat)
+   ====================================================================== */
+@keyframes dealIn{
+  0%{ opacity:0; transform: translateY(-22px) scale(.986); }
+  60%{ opacity:1; }
+  100%{ opacity:1; transform: translateY(0) scale(1); }
+}
+.deal{ opacity:0; animation: dealIn .62s cubic-bezier(.2,.7,.25,1.02) forwards; }
+
+/* ======================================================================
+   TYPOGRAPHY HELPERS + CENTERED SECTION HEADERS  (#09 symmetry, #18 skin)
+   ====================================================================== */
+.label{
+  font-family:var(--font-head); text-transform:uppercase;
+  letter-spacing:.14em; color:var(--ink-soft); font-size:11px; font-weight:600;
+}
+.mono{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+
+.sec-head{ text-align:center; margin-bottom:16px; }
+.sec-head h2{
+  font-family:var(--font-display); font-size:23px; letter-spacing:.09em;
+  color:var(--ticket-white); margin:0; line-height:1;
+  text-shadow:0 1px 0 rgba(0,0,0,.35);
+}
+.sec-rule{ display:flex; align-items:center; justify-content:center; gap:8px; margin:7px 0 5px; }
+.sec-rule .dash{ flex:1; height:0; border-top:1.5px dashed rgba(246,240,221,.32); max-width:120px; }
+.sec-rule .dia{ width:6px; height:6px; background:var(--gold); transform:rotate(45deg); box-shadow:0 0 6px rgba(182,145,44,.5); }
+.sec-sub{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.1em;
+  color:rgba(246,240,221,.5); text-transform:uppercase;
+}
+
+/* ======================================================================
+   §1  MASTHEAD  (mirror-symmetric ticket: stub · center · stub)
+   ====================================================================== */
+.masthead{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px; padding:15px 30px; margin-bottom:22px;
+}
+.mh-left{ display:flex; flex-direction:column; gap:5px; }
+.wm-row{ display:flex; align-items:center; gap:11px; }
+.mh-stub{
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; justify-content:space-between; gap:14px;
+  padding:24px 8px; z-index:1;
+}
+.mh-stub.left{ border-right:2px dashed var(--perf); }
+.mh-stub.right{ border-left:2px dashed var(--perf); }
+.mh-stub .vert{
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:var(--font-head); letter-spacing:.28em; font-size:10.5px;
+  font-weight:600; color:var(--ink-faint);
+}
+.mh-stub .serial{
+  writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; color:var(--ink-faint);
+}
+.barcode{
+  width:26px; height:74px;
+  background-image:repeating-linear-gradient(180deg,
+    var(--ink) 0 2px, transparent 2px 4px,
+    var(--ink) 4px 5px, transparent 5px 8px,
+    var(--ink) 8px 11px, transparent 11px 13px);
+  opacity:.82;
+}
+.wordmark{
+  position:relative;
+  font-family:var(--font-display); font-size:42px; line-height:1;
+  letter-spacing:.05em; color:var(--ink);
+}
+.pass{
+  display:inline-block;
+  font-family:var(--font-head); font-size:9.5px; font-weight:700; letter-spacing:.24em;
+  color:var(--stamp-red); border:1.5px solid var(--stamp-red); border-radius:2px;
+  padding:2px 7px; white-space:nowrap; opacity:.9; transform:rotate(-2deg); mix-blend-mode:multiply;
+}
+.tagline{
+  font-family:var(--font-type); font-size:12.5px; color:var(--ink-soft);
+  font-style:italic;
+}
+.mh-actions{ display:flex; align-items:center; gap:14px; }
+.live-pill{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:.05em; color:var(--ink);
+  border:1.5px solid var(--ink); padding:5px 11px 5px 9px; border-radius:2px;
+  background:repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,.04) 6px 7px);
+}
+.live-dot{
+  width:8px; height:8px; border-radius:50%; background:var(--stamp-red);
+  box-shadow:0 0 0 0 rgba(165,23,29,.6); animation:pulseRed 1.6s ease-out infinite;
+}
+@keyframes pulseRed{
+  0%{ box-shadow:0 0 0 0 rgba(165,23,29,.55); }
+  70%{ box-shadow:0 0 0 8px rgba(165,23,29,0); }
+  100%{ box-shadow:0 0 0 0 rgba(165,23,29,0); }
+}
+.connect-btn{
+  position:relative; font-family:var(--font-head); text-transform:uppercase;
+  letter-spacing:.14em; font-size:12.5px; font-weight:600; color:var(--ticket-white);
+  background:var(--ink); border:none; padding:11px 22px; cursor:pointer;
+  box-shadow:0 5px 0 rgba(0,0,0,.35), 0 7px 11px rgba(0,0,0,.3);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.connect-btn::before,.connect-btn::after{
+  content:""; position:absolute; top:0; bottom:0; width:9px;
+  background:repeating-linear-gradient(180deg, var(--ticket-white) 0 3px, transparent 3px 6px);
+}
+.connect-btn::before{ left:-1px; } .connect-btn::after{ right:-1px; }
+.connect-btn:hover{ transform:translateY(2px); box-shadow:0 3px 0 rgba(0,0,0,.35), 0 5px 8px rgba(0,0,0,.3); }
+
+/* ======================================================================
+   §2  ARENA STATS  (single receipt, 5 equal perforated cells)
+   ====================================================================== */
+.receipt{ display:grid; grid-template-columns:repeat(5,1fr); padding:22px 10px; margin-bottom:34px; }
+.receipt-item{ text-align:center; padding:4px 14px; border-left:1px dashed var(--perf); }
+.receipt-item:first-child{ border-left:none; }
+.receipt-item .label{ margin-bottom:9px; display:block; }
+.receipt-item .val{ font-family:var(--font-mono); font-weight:700; font-size:24px; color:var(--ink); }
+
+/* ======================================================================
+   THREE-COLUMN SYMMETRIC GRID  (#09 skeleton)
+   ====================================================================== */
+.grid-3{
+  display:grid; grid-template-columns:330px 1fr 330px; gap:30px;
+  align-items:start; margin-bottom:44px;
+}
+.col{ display:flex; flex-direction:column; gap:34px; }
+.stack-block{ display:flex; flex-direction:column; }
+
+/* ======================================================================
+   §3  LIVE MATCHES  (stacked match tickets)
+   ====================================================================== */
+.matches{ display:flex; flex-direction:column; gap:22px; }
+.match-ticket{ padding:18px 20px 20px; }
+.match-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.half-stamp{
+  font-family:var(--font-head); font-size:10px; font-weight:700; letter-spacing:.1em;
+  color:var(--stamp-red); border:1.5px solid var(--stamp-red); padding:2px 7px; border-radius:2px;
+  transform:rotate(-3deg); white-space:nowrap; mix-blend-mode:multiply;
+}
+.minute{ font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--ink); }
+.teams{
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;
+  font-family:var(--font-head); font-size:19px; font-weight:600; color:var(--ink);
+}
+.teams .score{ font-family:var(--font-mono); font-size:25px; font-weight:700; color:var(--ink); letter-spacing:.02em; }
+.team-names{
+  display:flex; justify-content:space-between;
+  font-family:var(--font-type); font-size:11.5px; color:var(--ink-soft);
+}
+
+/* ======================================================================
+   §4  MARKETS  (ledger ticket)
+   ====================================================================== */
+.markets-ticket{ padding:20px 24px 22px; }
+.mkt-head,.mkt-row{
+  display:grid; grid-template-columns:98px 1fr 56px 56px 120px;
+  align-items:center; gap:12px; padding:11px 2px;
+}
+.mkt-head{ border-bottom:1.5px dashed var(--perf); padding-bottom:9px; }
+.mkt-head span{ text-align:right; }
+.mkt-head span:first-child,.mkt-head span:nth-child(2){ text-align:left; }
+.mkt-row{ border-bottom:1px dotted var(--perf); }
+.mkt-row:last-child{ border-bottom:none; }
+.fixture-code{ font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--ink); }
+.market-desc{ font-family:var(--font-type); font-size:12.5px; color:var(--ink-soft); }
+.pct{ font-family:var(--font-mono); font-weight:600; font-size:14px; text-align:right; }
+.pct.fair{ color:var(--aegis); }
+.pct.line{ color:var(--vane); }
+.spark-cell{ text-align:right; }
+.spark-cell svg{ display:inline-block; vertical-align:middle; }
+
+/* ======================================================================
+   §5  THE DUEL  (mirror-symmetric AEGIS vs VANE + central VS medallion)
+   ====================================================================== */
+.duel{ position:relative; display:grid; grid-template-columns:1fr 1fr; gap:26px; align-items:stretch; }
+.agent-card{ padding:24px 24px 22px; }
+.agent-card.aegis{ padding-right:52px; }
+.agent-card.vane{ padding-left:52px; text-align:right; }
+.agent-role{
+  display:inline-block; font-family:var(--font-head); font-size:10px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; padding:3px 9px; border-radius:2px;
+  color:var(--ticket-white); margin-bottom:10px;
+}
+.agent-card.aegis .agent-role{ background:var(--aegis); }
+.agent-card.vane .agent-role{ background:var(--vane); }
+.agent-name{ font-family:var(--font-display); font-size:46px; letter-spacing:.05em; line-height:1; margin-bottom:16px; }
+.agent-card.aegis .agent-name{ color:var(--aegis-deep); }
+.agent-card.vane .agent-name{ color:var(--vane-deep); }
+.agent-stats{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.agent-stat-row{
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  border-bottom:1px dotted var(--perf); padding-bottom:7px; font-size:12.5px;
+}
+.agent-card.vane .agent-stat-row{ flex-direction:row-reverse; }
+.agent-stat-row .k{ font-family:var(--font-type); color:var(--ink-soft); }
+.agent-stat-row .v{ font-family:var(--font-mono); font-weight:700; color:var(--ink); font-size:13px; }
+.agent-stat-row .v.small{ font-size:11px; }
+.pnl-pos{ color:var(--stamp-green)!important; }
+.risk-line .label{ margin-bottom:6px; display:block; }
+.gauge-track{
+  height:9px; border-radius:5px; background:var(--ticket-cream);
+  border:1px solid var(--ticket-edge); overflow:hidden;
+}
+.gauge-fill{ height:100%; border-radius:5px; }
+.agent-card.aegis .gauge-fill{ background:linear-gradient(90deg, var(--aegis), var(--aegis-deep)); }
+.agent-card.vane .gauge-fill{ background:linear-gradient(270deg, var(--vane), var(--vane-deep)); margin-left:auto; }
+.vs-badge{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-6deg);
+  width:82px; height:82px; border-radius:50%; z-index:6;
+  background:linear-gradient(158deg, var(--ticket-white), var(--ticket-cream));
+  border:3px solid var(--ink); box-shadow:0 12px 24px rgba(0,0,0,.45);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-size:28px; letter-spacing:.05em; color:var(--stamp-red);
+}
+.vs-badge::after{ content:""; position:absolute; inset:4px; border:1px dashed var(--perf); border-radius:50%; }
+
+/* ======================================================================
+   §6  ORDER / FILL TAPE  (register-receipt ticket, zig-zag foot)
+   ====================================================================== */
+.tape-ticket{ padding:18px 0 30px; }
+.tape-head{
+  font-family:var(--font-head); text-transform:uppercase; letter-spacing:.16em;
+  font-size:11px; font-weight:700; text-align:center; color:var(--ink);
+  padding:0 20px 11px; margin:0 20px 6px; border-bottom:2px dashed var(--perf);
+}
+.tape-row{
+  display:grid; grid-template-columns:58px 52px 1fr 56px; gap:9px; align-items:baseline;
+  padding:9px 20px; font-family:var(--font-mono); font-size:12px; border-bottom:1px dotted var(--perf);
+}
+.tape-row:last-of-type{ border-bottom:none; }
+.tape-agent{ font-weight:700; }
+.tape-agent.a-aegis{ color:var(--aegis); }
+.tape-agent.a-vane{ color:var(--vane); }
+.tape-action{
+  text-transform:uppercase; font-size:10px; letter-spacing:.05em; font-weight:700;
+  align-self:center; padding:2px 6px; border-radius:2px; text-align:center;
+}
+.tape-action.post{ background:rgba(28,76,115,.13); color:var(--aegis); }
+.tape-action.fill{ background:rgba(28,107,58,.15); color:var(--stamp-green); }
+.tape-action.cancel{ background:rgba(165,23,29,.1); color:var(--stamp-red); }
+.tape-detail{ color:var(--ink-soft); }
+.tape-amt{ text-align:right; font-weight:700; color:var(--ink); }
+.tape-zigzag{
+  position:absolute; left:10px; right:10px; bottom:-12px; height:20px; background:var(--ticket-cream);
+  clip-path:polygon(0% 0%,4% 100%,8% 0%,12% 100%,16% 0%,20% 100%,24% 0%,28% 100%,32% 0%,36% 100%,40% 0%,44% 100%,48% 0%,52% 100%,56% 0%,60% 100%,64% 0%,68% 100%,72% 0%,76% 100%,80% 0%,84% 100%,88% 0%,92% 100%,96% 0%,100% 0%);
+}
+
+/* right-column mini exposure ledger */
+.expo-ticket{ padding:18px 22px 20px; }
+.expo-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 2px; border-bottom:1px dotted var(--perf);
+}
+.expo-row:last-child{ border-bottom:none; }
+.expo-row .k{ font-family:var(--font-mono); font-weight:700; font-size:12.5px; color:var(--ink); }
+.expo-row .v{ font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--aegis); }
+
+/* ======================================================================
+   §7  SETTLEMENTS  (SETTLED stamps + tx proof)
+   ====================================================================== */
+.settlements{ display:flex; flex-direction:column; gap:22px; }
+.settle-ticket{ padding:18px 22px 18px; overflow:visible; }
+.settle-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.settle-fixture{ font-family:var(--font-head); font-size:17px; font-weight:700; color:var(--ink); }
+.settle-market{ font-family:var(--font-type); font-size:12px; color:var(--ink-soft); margin-top:3px; }
+.settle-market .won{ color:var(--stamp-green); font-weight:700; }
+.stamp{
+  position:relative; font-family:var(--font-head); font-weight:700; font-size:19px; letter-spacing:.1em;
+  color:var(--stamp-red); border:3px solid var(--stamp-red); border-radius:6px; padding:3px 10px;
+  transform:rotate(-10deg); opacity:.86; text-shadow:0 0 1px var(--stamp-red);
+  mix-blend-mode:multiply; white-space:nowrap; flex-shrink:0;
+}
+.stamp::after{ content:""; position:absolute; inset:-3px; border:1px solid var(--stamp-red); border-radius:8px; opacity:.5; }
+.settle-bottom{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  margin-top:8px; padding-top:10px; border-top:1px dashed var(--perf);
+}
+.settle-paid{ font-family:var(--font-mono); font-weight:700; font-size:14px; color:var(--stamp-green); white-space:nowrap; }
+.settle-tx{
+  font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);
+  text-decoration:none; border-bottom:1px dotted var(--ink-faint); word-break:break-all; text-align:right;
+}
+.settle-tx:hover{ color:var(--aegis); border-color:var(--aegis); }
+
+/* ======================================================================
+   §8  RISK DESK  (full-width ticket, two mirror columns)
+   ====================================================================== */
+.risk-ticket{ padding:26px 34px 28px; }
+.risk-cols{ display:grid; grid-template-columns:1fr 1fr; gap:48px; }
+.risk-col-head{
+  display:flex; align-items:center; gap:11px; margin-bottom:16px;
+  padding-bottom:10px; border-bottom:2px dashed var(--perf);
+}
+.risk-col-head h3{ font-family:var(--font-display); font-size:26px; letter-spacing:.04em; margin:0; }
+.risk-col.aegis h3{ color:var(--aegis-deep); }
+.risk-col.vane h3{ color:var(--vane-deep); }
+.risk-col.vane .risk-col-head{ flex-direction:row-reverse; }
+.risk-col.vane .risk-col-head h3{ margin-left:auto; }
+.risk-row{ margin-bottom:15px; }
+.risk-row-top{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:12px; margin-bottom:6px; }
+.risk-row-top .rk{ color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; font-size:10.5px; }
+.risk-row-top .rv{ font-weight:700; color:var(--ink); }
+.risk-col.aegis .gauge-fill{ background:linear-gradient(90deg, var(--aegis), var(--aegis-deep)); }
+.risk-col.vane .gauge-fill{ background:linear-gradient(90deg, var(--vane), var(--vane-deep)); }
+.feed-health{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--ink); }
+.feed-dot{
+  width:9px; height:9px; border-radius:50%; background:var(--stamp-green);
+  box-shadow:0 0 0 0 rgba(28,107,58,.6); animation:pulseGreen 2.2s ease-out infinite;
+}
+@keyframes pulseGreen{
+  0%{ box-shadow:0 0 0 0 rgba(28,107,58,.55); }
+  70%{ box-shadow:0 0 0 7px rgba(28,107,58,0); }
+  100%{ box-shadow:0 0 0 0 rgba(28,107,58,0); }
+}
+
+/* ======================================================================
+   FOOTER  (symmetric barcode · fine-print · barcode)
+   ====================================================================== */
+.footer-strip{ display:flex; align-items:center; justify-content:center; gap:22px; margin-top:36px; opacity:.75; }
+.footer-strip .fine{ font-family:var(--font-type); font-size:11px; color:rgba(246,240,221,.55); letter-spacing:.05em; }
+.footer-barcode{
+  width:150px; height:20px;
+  background-image:repeating-linear-gradient(90deg,
+    rgba(246,240,221,.8) 0 1px, transparent 1px 3px,
+    rgba(246,240,221,.8) 3px 5px, transparent 5px 8px,
+    rgba(246,240,221,.8) 8px 10px, transparent 10px 12px);
+}
+
+/* ======================================================================
+   RESPONSIVE
+   ====================================================================== */
+@media (max-width:1180px){
+  .grid-3{ grid-template-columns:1fr; }
+  .risk-cols{ grid-template-columns:1fr; gap:28px; }
+}
+@media (max-width:720px){
+  .masthead{ grid-template-columns:1fr; }
+  .mh-stub{ display:none; }
+  .receipt{ grid-template-columns:repeat(2,1fr); row-gap:16px; }
+  .duel{ grid-template-columns:1fr; gap:52px; }
+  .agent-card.aegis{ padding-right:24px; }
+  .agent-card.vane{ padding-left:24px; text-align:left; }
+  .agent-card.vane .agent-stat-row{ flex-direction:row; }
+  .vs-badge{ top:auto; bottom:-40px; left:50%; }
+  .wordmark{ font-size:54px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .deal{ animation:none; opacity:1; }
+  .live-dot,.feed-dot{ animation:none; }
+  .ticket{ transition:none; }
+}

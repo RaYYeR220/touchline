@@ -189,7 +189,7 @@ bundled demo snapshot if the RPC read fails.
 npx tsx packages/mcp/src/index.ts
 ```
 
-Register it with any MCP client (Claude Desktop, etc.) over stdio. Exposes
+Register it with any stdio-capable MCP client. Exposes
 `list_markets`, `get_market`, and `fair_value` as always-on read tools, plus
 `create_market`, `post_offer`, `fill_offer`, `cancel_offer`, and `settle` as
 write tools gated behind `TOUCHLINE_MCP_ALLOW_WRITES=1`.

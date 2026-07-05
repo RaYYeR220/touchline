@@ -19,7 +19,7 @@ Write tools are disabled by default. Set `TOUCHLINE_MCP_ALLOW_WRITES=1` to enabl
 
 ## Register with an MCP client
 
-Add to your MCP client configuration (e.g. Claude Desktop's `claude_desktop_config.json`):
+Add it to your MCP client's server configuration (the standard `mcpServers` block):
 
 ```json
 {

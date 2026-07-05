@@ -8,6 +8,8 @@ test-ledger
 # Node
 node_modules
 dist
+.vite
+.vercel
 .yarn
 .env
 .env.*

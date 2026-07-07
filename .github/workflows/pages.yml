@@ -25,7 +25,7 @@ jobs:
       - run: npm install
       - name: Build the dashboard
         env:
-          VITE_RPC_URL: https://api.devnet.solana.com
+          VITE_RPC_URL: ${{ secrets.HELIUS_DEVNET_RPC }}
         run: npm run build -w @touchline/app -- --base=/touchline/
       - uses: actions/upload-pages-artifact@v3
         with:

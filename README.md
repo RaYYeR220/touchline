@@ -209,6 +209,11 @@ curl -i http://localhost:4021/signal      # → 402 Payment Required
 Paying clients settle $0.01 USDC through the public x402.org facilitator and
 get back the same Poisson probability estimate the agent trades on.
 
+Verified end-to-end on devnet — a client paid and received the signal in one
+call; the facilitator-sponsored USDC settlement (Circle devnet mint, `exact` SVM
+scheme) landed on-chain:
+https://explorer.solana.com/tx/3CfbQigEnYKV1QtTegcV7ohdpiNXsWPtuXNhZ3SrUwfo2YYENt7cRnsGTemDuS2b7bRsMDUK7dKCCBKBJqoPxA3M?cluster=devnet
+
 ### Environment variables
 
 | Variable | Used by | Default |

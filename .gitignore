@@ -22,12 +22,7 @@ dist
 *.pem
 wallet*.json
 
-# Internal / strategy / process artifacts — NEVER publish
-BRIEF.md
-ALTERNATIVES.md
-docs/superpowers/
-.remember/
-MEMORY.md
+# Local drafts / working files — not part of the published repo
 *-internal/
 *-backup*
 *.bundle
@@ -36,7 +31,5 @@ mockups/
 design-ref/
 variants/
 scratch/
-.superpowers/
-submission*.md
 
 .vercel

@@ -174,6 +174,12 @@ WALLET_PATH=~/.config/solana/id.json \
 npx tsx src/index.ts --strategy taker --tick-ms 5000
 ```
 
+The program's 16 and the agent's 143 above, plus 21 more (`npx vitest run`)
+across `packages/txline-sdk` (18) and `packages/mcp` (3), add up to **180
+tests passing across the monorepo** — see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#6-test-coverage) for the full
+per-file breakdown.
+
 ### 3. Run the live dashboard
 
 ```bash

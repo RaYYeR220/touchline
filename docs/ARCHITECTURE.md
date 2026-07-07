@@ -310,11 +310,15 @@ into rule 5 above on the next tick.
 
 - **Program**: `cargo test -p touchline` — 16 LiteSVM tests across
   `lib.rs` (program ID sanity), `tests/venue.rs` (market creation, mint
-  decimals rejection, offer posting/locking, cancel refunds, per-fill and
-  per-market cap rejection, fill escrow accounting), and
+  decimals rejection, offer posting/locking, invalid-price rejection, cancel
+  refunds, per-fill and per-market cap rejection, fill escrow accounting), and
   `tests/settlement.rs` (YES wins, NO wins, a two-stat `Add` predicate, wrong
   oracle program rejection, double-settle rejection, an attacker-supplied ATA
   rejection, and a full vault-drained assertion).
 - **Agent**: `npx vitest run` inside `packages/agent` — 143 tests across
   `poisson.test.ts` (21), `guards.test.ts` (32), `fairValue.test.ts` (24),
   `matchState.test.ts` (27), `taker.test.ts` (17), and `mm.test.ts` (22).
+- **SDK and MCP**: `npx vitest run` inside each package — 18 tests in
+  `packages/txline-sdk` (auth/PDA/predicate/SSE encoding) and 3 smoke tests in
+  `packages/mcp`.
+- **180 tests pass across the monorepo** in total.

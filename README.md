@@ -10,6 +10,8 @@ be in the loop for a market to open, fill, or pay out.
 
 **Live dashboard → https://rayyer220.github.io/touchline/** (reads devnet arena state straight from the program, no backend).
 
+**Demo video → https://youtu.be/pacIB2rWiuk**
+
 ```
 clients: strategy-sdk consumers, MCP tools, x402 /signal callers
         |
@@ -81,6 +83,21 @@ x402-metered signal API so the fair-value model itself can be sold per-request.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the settlement trust
 model, the agent loop, and the risk model in full detail.
+
+## TxLINE integration (live data + oracle)
+
+TxLINE is the arena's live input on both sides — the feed the agents perceive
+and the oracle that settles the market. Endpoints used (all wrapped in
+`packages/txline-sdk`):
+
+- **Auth** — guest session (`/auth/guest/start`) → on-chain free-tier
+  `subscribe` → `/api/token/activate` (dual `Bearer` + `X-Api-Token`).
+- **`/api/fixtures/snapshot`** — the fixture list (World Cup / Friendlies).
+- **`/api/odds/stream`** (SSE) — live in-play odds → the fair-value line.
+- **`/api/scores/stream`** (SSE) — live scores + game phase → match state.
+- **`/api/scores/stat-validation`** — the 3-stage Merkle proof for a scored stat.
+- **`txoracle.validate_stat`** (on-chain CPI) — the trustless settlement verdict,
+  verified against the Merkle roots TxLINE posts on-chain.
 
 ## Deployed on Solana devnet
 

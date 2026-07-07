@@ -38,3 +38,5 @@ variants/
 scratch/
 .superpowers/
 submission*.md
+
+.vercel
